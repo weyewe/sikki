@@ -3,9 +3,9 @@ class CreateGroupLoans < ActiveRecord::Migration
     create_table :group_loans do |t|
       t.string :name
       t.integer :office_id 
-      t.integer :group_loan_product_id 
       
-      
+      t.boolean :is_started, :default => false 
+      t.boolean :is_closed, :default => false
       t.integer :phase  
 =begin Phases: 
   FINANCIAL_EDUCATION => First Filter 
