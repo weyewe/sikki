@@ -12,8 +12,8 @@ Deactivation Status
 2. absent @ loan disbursement 
 =end
       
-      t.boolean :attended_financial_education , :default => false 
-      t.boolean :attended_loan_disbursement , :default => false 
+      t.boolean :is_attending_financial_education  , :default => nil 
+      t.boolean :is_attending_loan_disbursement , :default => nil 
       
       t.integer :sub_group_loan_id 
       

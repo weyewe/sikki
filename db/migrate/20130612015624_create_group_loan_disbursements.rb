@@ -4,7 +4,6 @@ class CreateGroupLoanDisbursements < ActiveRecord::Migration
       
       t.integer :group_loan_membership_id 
       
-      t.integer :group_loan_product_id
 
       t.timestamps
     end

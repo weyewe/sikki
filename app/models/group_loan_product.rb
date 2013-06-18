@@ -1,7 +1,7 @@
 class GroupLoanProduct < ActiveRecord::Base
   # attr_accessible :title, :body
   belongs_to :office 
-  has_many :group_loans 
+  has_many :group_loan_subcriptions  
   
   validates_presence_of :office_id, 
                         :total_weeks, 
@@ -11,6 +11,9 @@ class GroupLoanProduct < ActiveRecord::Base
                         :admin_fee, 
                         :initial_savings
         
+  
+  has_many :group_loan_subcriptions
+  has_many :group_loan_memberships, :through => :group_loan_subcriptions
   
   
   validate :total_weeks_must_not_be_zero
@@ -61,7 +64,7 @@ class GroupLoanProduct < ActiveRecord::Base
   end
   
   def self.update_object( params ) 
-    return nil if self.group_loans.count != 0
+    return nil if self.group_loan_subcriptions.count != 0
     
     self.total_weeks       = params[:total_weeks]
     self.principal         = BigDecimal( params[:principal] || '0')
@@ -74,4 +77,10 @@ class GroupLoanProduct < ActiveRecord::Base
     self.save 
     return self
   end
+  
+  def disbursed_principal
+    principal * total_weeks 
+  end
+  
+  
 end
