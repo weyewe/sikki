@@ -201,6 +201,37 @@ Phase: loan disbursement finalization
     self.execute_loan_disbursement_payment 
   end
   
+=begin
+ Weekly Payment 
+=end
+
+  def finalize_group_weekly_payment_period
+  end
+
+=begin
+ Grace Period
+=end
+
+  def finalize_group_grace_payment_period
+  end
+ 
+=begin
+ Default Resolution
+=end
+
+  def finalize_default_resolution_period
+  end
+
+=begin
+ Returning the voluntary savings  period
+=end
+
+  def close
+    # port all remaining voluntary savings into normal savings_account 
+  end
+  
+  
+  
   
   
   
