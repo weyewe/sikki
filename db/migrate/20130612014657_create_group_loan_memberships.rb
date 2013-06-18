@@ -11,6 +11,8 @@ Deactivation Status
 1. absent @ financial education
 2. absent @ loan disbursement 
 =end
+      t.decimal :outstanding_grace_period_amount , :default        => 0,  :precision => 9, :scale => 2
+      #the initial outstanding is calculated from summing all backlogs 
       
       t.boolean :is_attending_financial_education  , :default => nil 
       t.boolean :is_attending_loan_disbursement , :default => nil 

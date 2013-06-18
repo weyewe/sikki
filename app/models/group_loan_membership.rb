@@ -16,6 +16,8 @@ class GroupLoanMembership < ActiveRecord::Base
   has_many :group_loan_grace_payments
   has_many :group_loan_weekly_responsibilities
   
+  has_many :group_loan_backlogs 
+  
   def self.create_object( params ) 
     new_object = self.new 
     new_object.group_loan_id      = params[:group_loan_id] 
@@ -54,6 +56,25 @@ class GroupLoanMembership < ActiveRecord::Base
     self.is_attending_financial_education = params[:is_attending_financial_education]
     self.save 
   end
+  
+  def backlogs
+    self.group_loan_backlogs.where(:is_paid => false)
+  end
+  
+  def total_backlogs
+    backlogs.count 
+  end
+  
+  def set_outstanding_grace_period_amount
+    initial_outstanding_grace_period_amount = self.total_backlogs * self.group_loan_product.grace_period_weekly_payment_amount
+    
+    paid_amount = self.grace_period_payments.sum("amount")
+    #paid amount can't exceed the initial_outstanding. If it exceeds, port to voluntary savings 
+    
+    self.outstanding_grace_period_amount = initial_outstanding_grace_period_amount - paid_amount
+    self.save
+  end
+  
   
   
 end

@@ -82,5 +82,9 @@ class GroupLoanProduct < ActiveRecord::Base
     principal * total_weeks 
   end
   
+  def grace_period_weekly_payment_amount
+    principal + interest 
+  end
+  
   
 end

@@ -6,6 +6,7 @@ class GroupLoan < ActiveRecord::Base
   has_many :sub_group_loans 
   
   has_many :savings_entries, :as => :financial_product 
+  has_many :group_loan_backlogs
   
   
   has_many :group_loan_weekly_tasks # weekly payment, weekly attendance  
@@ -205,7 +206,40 @@ Phase: loan disbursement finalization
  Weekly Payment 
 =end
 
+  def loan_duration
+    duration_array = []
+    self.active_group_loan_memberships.each do |glm|
+      duration_array << glm.group_loan_subcription.total_weeks
+    end
+    
+    return duration_array.uniq.first  
+  end
+
+  def calculate_grace_period_payment
+    self.active_group_loan_memberships.each do |glm|
+      glm.set_outstanding_grace_period_amount
+    end
+  end
+
   def finalize_group_weekly_payment_period
+    if self.is_weekly_payment_period_phase? and not self.is_weekly_payment_period_closed?
+      errors.add(:generic_errors, "Bukan di fase penyerahan pinjaman")
+      return self
+    end
+    
+    if self.is_weekly_payment_period_closed?
+      errors.add(:generic_errors, "Pembayaran mingguan sudah ditutup")
+      return self
+    end
+    
+    if self.group_loan_weekly_tasks.where(:is_closed =>true).count != self.loan_duration
+      errors.add(:generic_errors, "Ada Pembayaran mingguan yang belum di konfirmasi")
+      return self
+    end
+    
+    self.calculate_grace_period_payment 
+    self.is_weekly_payment_period_closed = true
+    self.save 
   end
 
 =begin
