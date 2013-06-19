@@ -13,7 +13,8 @@ GROUP_LOAN_DEFAULT_PAYMENT_CASE = {
 
 GROUP_LOAN_DEACTIVATION_STATUS = {
   :financial_education_absent => 1, 
-  :loan_disbursement_absent => 2 
+  :loan_disbursement_absent => 2 ,
+  :finished_group_loan => 3 
 }
 
 FUND_DIRECTION = {
@@ -25,3 +26,5 @@ SAVINGS_STATUS = {
   :group_loan_compulsory_savings => 10,
   :group_loan_voluntary_savings => 11
 }
+
+GROUP_LOAN_ROUND_UP_VALUE = 500

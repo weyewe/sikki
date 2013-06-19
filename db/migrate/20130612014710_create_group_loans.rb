@@ -1,3 +1,10 @@
+=begin
+  New products: 
+  1. instead of weekly, once in several weeks 
+  2. Default resolution is performed weekly. Offline. 
+=end
+
+
 class CreateGroupLoans < ActiveRecord::Migration
   def change
     create_table :group_loans do |t|
@@ -8,7 +15,8 @@ class CreateGroupLoans < ActiveRecord::Migration
       t.booelan :is_financial_education_finalized, :default => false 
       t.boolean :is_loan_disbursed, :default => false 
       t.boolean :is_weekly_payment_period_closed, :default => false 
-      t.boolean :is_grace_payment_period_closed , :default => false 
+      t.boolean :is_grace_payment_period_closed , :default => false
+      t.boolean :is_default_payment_period_closed , :default => false  
       
       t.boolean :is_closed, :default => false
       # t.integer :phase  
@@ -29,7 +37,7 @@ class CreateGroupLoans < ActiveRecord::Migration
       #net income: can be loss or profit 
       
       t.integer :group_leader_id 
-      t.integer :default_payment_resolution_case 
+      t.integer :default_payment_resolution_case , :default => GROUP_LOAN_DEFAULT_PAYMENT_CASE[:standard]
 
 =begin DEFAULT_PAYMENT_CASE
   STANDARD 
@@ -39,7 +47,7 @@ class CreateGroupLoans < ActiveRecord::Migration
       t.boolean :is_auto_deduct_admin_fee,        :default => true 
       t.boolean :is_auto_deduct_initial_savings , :default => true 
 
-      t.boolean :is_compulsory_weekly_attendance,:default  => true 
+      t.boolean :is_compulsory_weekly_attendance, :default  => true 
 
       t.timestamps
     end

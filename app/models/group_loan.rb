@@ -47,7 +47,14 @@ class GroupLoan < ActiveRecord::Base
   
   
   def active_group_loan_memberships
-    self.group_loan_memberships.where(:is_active => true )
+    if group_loan.is_closed?
+      return self.group_loan_memberships.where(:is_active => true )
+    else
+      return self.group_loan_memberships.where{
+        (is_active.eq false ) and 
+        ( deactivation_status.eq GROUP_LOAN_DEACTIVATION_STATUS[:finished_group_loan] )
+      }
+    end 
   end
    
    
@@ -70,7 +77,9 @@ class GroupLoan < ActiveRecord::Base
     not is_financial_education_finalized? and
     not is_loan_disbursed? and 
     not is_group_weekly_payment_closed? and 
-    not is_grace_period_payment_closed? 
+    not is_grace_period_payment_closed?  and 
+    not is_default_payment_period_closed? and 
+    not is_closed? 
   end
   
   def is_loan_disbursement_phase? 
@@ -78,7 +87,9 @@ class GroupLoan < ActiveRecord::Base
     is_financial_education_finalized? and
     not is_loan_disbursed? and 
     not is_group_weekly_payment_closed? and 
-    not is_grace_period_payment_closed?
+    not is_grace_period_payment_closed? and 
+    not is_default_payment_period_closed? and 
+    not is_closed?
   end
   
   def is_weekly_payment_period_phase?
@@ -86,7 +97,9 @@ class GroupLoan < ActiveRecord::Base
     is_financial_education_finalized? and
     is_loan_disbursed? and 
     not is_group_weekly_payment_closed? and 
-    not is_grace_period_payment_closed?
+    not is_grace_period_payment_closed? and 
+    not is_default_payment_period_closed? and 
+    not is_closed?
   end
   
   def is_grace_payment_period_phase?
@@ -94,7 +107,29 @@ class GroupLoan < ActiveRecord::Base
     is_financial_education_finalized? and
     is_loan_disbursed? and 
     is_group_weekly_payment_closed? and 
-    not is_grace_period_payment_closed?
+    not is_grace_period_payment_closed? and 
+    not is_default_payment_period_closed? and 
+    not is_closed?
+  end
+  
+  def is_default_payment_resolution_phase?
+    is_started? and 
+    is_financial_education_finalized? and
+    is_loan_disbursed? and 
+    is_group_weekly_payment_closed? and 
+    is_grace_period_payment_closed? and 
+    not is_default_payment_period_closed? and 
+    not is_closed? 
+  end
+  
+  def is_closing_phase?
+    is_started? and 
+    is_financial_education_finalized? and
+    is_loan_disbursed? and 
+    is_group_weekly_payment_closed? and 
+    is_grace_period_payment_closed? and 
+    is_default_payment_period_closed? and 
+    not is_closed? 
   end
    
    
@@ -108,12 +143,12 @@ class GroupLoan < ActiveRecord::Base
     end
     
     if self.group_loan_memberhips.count == 0 
-      errors.add(:generic_errors, "Jumlah minggu cicilan harus lebih besar dari 0")
+      errors.add(:generic_errors, "Jumlah anggota harus lebih besar dari 0")
       return self 
     end
     
     if not self.all_group_loan_memberships_have_equal_duration?
-      errors.add(:generic_errors, "Jumlah minggu cicilan harus lebih besar dari 0")
+      errors.add(:generic_errors, "Durasi pinjaman harus sama")
       return self 
     end
     
@@ -177,9 +212,15 @@ Phase: loan disbursement finalization
     end
   end
   
+  
+  def create_default_payments_for_active_members
+    self.active_group_loan_memberships.each do |x|
+    end
+  end
+  
   def finalize_loan_disbursement
     
-    if self.is_loan_disbursement_phase? and not self.is_loan_disbursement_finalized?
+    if not self.is_loan_disbursement_phase?  
       errors.add(:generic_errors, "Bukan di fase penyerahan pinjaman")
       return self
     end
@@ -200,6 +241,7 @@ Phase: loan disbursement finalization
     self.deactivate_memberships_for_absentee_in_loan_disbursement
     
     self.execute_loan_disbursement_payment 
+    self.create_default_payments_for_active_members
   end
   
 =begin
@@ -215,57 +257,125 @@ Phase: loan disbursement finalization
     return duration_array.uniq.first  
   end
 
-  def calculate_grace_period_payment
+  def calculate_outstanding_grace_period_payment
     self.active_group_loan_memberships.each do |glm|
-      glm.set_outstanding_grace_period_amount
+      glm.calculate_outstanding_grace_period_amount
     end
   end
-
-  def finalize_group_weekly_payment_period
-    if self.is_weekly_payment_period_phase? and not self.is_weekly_payment_period_closed?
-      errors.add(:generic_errors, "Bukan di fase penyerahan pinjaman")
+  
+  def update_default_payments 
+    self.active_group_loan_memberships.joins(:default_payment).each do |glm|
+      glm.default_payment.update_status 
+      glm.default_payment.update_amount 
+    end
+  end
+  
+  def finalize_weekly_payment_period
+    if not self.is_weekly_payment_period_phase?  
+      errors.add(:generic_errors, "Bukan di fase pembayaran mingguan")
       return self
     end
     
     if self.is_weekly_payment_period_closed?
-      errors.add(:generic_errors, "Pembayaran mingguan sudah ditutup")
+      errors.add(:generic_errors, "Fase Pembayaran mingguan sudah ditutup")
       return self
     end
     
     if self.group_loan_weekly_tasks.where(:is_closed =>true).count != self.loan_duration
-      errors.add(:generic_errors, "Ada Pembayaran mingguan yang belum di konfirmasi")
+      errors.add(:generic_errors, "Ada Pembayaran mingguan yang belum di tutup")
       return self
     end
     
-    self.calculate_grace_period_payment 
+    
     self.is_weekly_payment_period_closed = true
     self.save 
+    
+    self.calculate_outstanding_grace_period_payment 
+    self.update_default_payments # update_default_payment_status + default payment amount (calculate the )
+    self.calculate_default_resolution_amount #member wants to know the money they owe 
+    # on all grace period payment, calculate_default_resolution_amount  (it changes!)
   end
 
 =begin
  Grace Period
 =end
 
-  def finalize_group_grace_payment_period
+  # def calculate_default_payment_amount
+  #   # run through all active_glm, update the default_payment status and amount
+  #   # 
+  #   # data from old KKI
+  #   self.update_default_payment_status  # if the amount outstanding is 0, it is non_defaultee 
+  #   # self.update_default_payment_in_grace_period
+  # end
+
+
+  def finalize_grace_payment_period
+     if not self.is_grace_payment_period_phase?  
+       errors.add(:generic_errors, "Bukan di fase penyerahan grace period payment")
+       return self
+     end
+
+     if self.is_grace_payment_period_closed?
+       errors.add(:generic_errors, "Pembayaran grace period sudah tutup")
+       return self
+     end
+     
+     self.is_grace_payment_period_closed = true
+     self.save 
+     # last update 
+     self.calculate_default_resolution_amount 
   end
  
 =begin
  Default Resolution
+ Business Constraint: the members want the savings to be returned fast. 
 =end
 
   def finalize_default_resolution_period
+    if not self.is_default_payment_resolution_phase?  
+      errors.add(:generic_errors, "Bukan di fase pemotongan tabungan wajib untuk menutupi default")
+      return self
+    end
+
+    if self.is_default_payment_period_closed?
+      errors.add(:generic_errors, "Fase pemotongan tabungan wajib sudah tutup")
+      return self
+    end
+
+    self.is_grace_payment_period_closed = true
+    self.save 
+    self.execute_default_resolution # specified in the group loan: default or custom 
+    self.port_compulsory_savings_to_voluntary_savings  
   end
 
 =begin
  Returning the voluntary savings  period
 =end
 
+# field worker returns to the office, brings the money re-saved @savings account
+# for every withdrawal, create group loan savings withdrawal
+# then, click close group loan. DONE. 
   def close
-    # port all remaining voluntary savings into normal savings_account 
+    if not self.is_closing_phase?  
+      errors.add(:generic_errors, "Bukan di fase  penutupan pinjaman group")
+      return self
+    end
+
+    if self.is_closed?
+      errors.add(:generic_errors, "Fase penutupan pinjaman sudah tutup")
+      return self
+    end
+
+    self.is_closed = true
+    self.save 
+    self.remaining_voluntary_savings_to_savings_account
   end
   
   
   
+  # group_loan_voluntary_savings_withdrawal.rb
+  # group_loan_voluntary_savings_withdrawal.rb
+  # group_loan_port_voluntary_savings.rb
   
   
   
