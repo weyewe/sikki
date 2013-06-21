@@ -267,7 +267,9 @@ Phase: loan disbursement finalization
   end
   
   def update_deductible_savings
-    
+    self.active_group_loan_memberships.where(:is_defaultee => true ) do |glm|
+      glm.update_defaultee_savings_deduction
+    end
   end
   
   def update_sub_group_non_defaultee_default_payment_contribution

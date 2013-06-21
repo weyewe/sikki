@@ -79,6 +79,36 @@ class GroupLoanMembership < ActiveRecord::Base
   Entering the grace period
 =end
 
+  def update_defaultee_savings_deduction
+    default_payment = self.default_payment 
+    total_compulsory_savings = self.total_compulsory_savings
+    total_voluntary_savings = self.total_voluntary_savings
+    total_deductible_member_savings = total_compulsory_savings + total_extra_savings
+    
+    # refresh the state 
+    default_payment.compulsory_savings_deduction_amount = BigDecimal("0")
+    default_payment.voluntary_savings_deduction_amount = BigDecimal("0")
+    default_payment.amount_to_be_shared_with_non_defaultee = BigDecimal("0")
+    
+    
+    
+    total_amount = default_payment.outstanding_grace_period_amount 
+    
+    
+    if total_amount <= total_compulsory_savings
+      default_payment.compulsory_savings_deduction_amount = total_amount 
+    elsif total_amount > total_compulsory_savings &&  total_amount <= total_deductible_member_savings 
+      default_payment.amount_of_compulsory_savings_deduction = total_compulsory_savings 
+      default_payment.voluntary_savings_deduction_amount = total_amount  - total_compulsory_savings
+    elsif total_amount > total_deductible_member_savings 
+      default_payment.compulsory_savings_deduction_amount = total_compulsory_savings 
+      default_payment.voluntary_savings_deduction_amount = total_extra_savings
+      default_payment.amount_to_be_shared_with_non_defaultee = total_amount - total_deductible_member_savings
+    end 
+    
+    default_payment.save
+  end
+
   def set_grace_period_defaultee_status
     if self.group_loan_backlogs.where(:is_paid => false).count != 0 
       self.is_defaultee = true 
