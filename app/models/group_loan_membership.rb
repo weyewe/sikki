@@ -75,6 +75,17 @@ class GroupLoanMembership < ActiveRecord::Base
     self.save
   end
   
+=begin
+  Entering the grace period
+=end
+
+  def set_grace_period_defaultee_status
+    if self.group_loan_backlogs.where(:is_paid => false).count != 0 
+      self.is_defaultee = true 
+      self.save 
+    end
+  end
+  
   
   
 end

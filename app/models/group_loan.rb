@@ -257,17 +257,52 @@ Phase: loan disbursement finalization
     return duration_array.uniq.first  
   end
 
-  def calculate_outstanding_grace_period_payment
-    self.active_group_loan_memberships.each do |glm|
+ 
+  
+  def setup_grace_period_payment 
+    self.active_group_loan_memberships.joins(:default_payment).each do |glm|
+      glm.set_grace_period_defaultee_status
       glm.calculate_outstanding_grace_period_amount
     end
   end
   
-  def update_default_payments 
-    self.active_group_loan_memberships.joins(:default_payment).each do |glm|
-      glm.default_payment.update_status 
-      glm.default_payment.update_amount 
+  def update_deductible_savings
+    
+  end
+  
+  def update_sub_group_non_defaultee_default_payment_contribution
+    self.sub_group_loans.each do |sub_group|
+      # sub_group.update_sub_group_default_payment_contribution(total_to_be_shared)
+      sub_group.update_sub_group_default_payment_contribution
     end
+  end
+  
+  def update_group_non_defaultee_default_payment_contribution
+  end
+  
+  def update_total_amount_in_default_payment
+  end
+  
+  def calculate_default_resolution_amount
+    # line 1222  # check it out! 
+    # for defaultee, update the total amount of cash deductible (compulsory saving + voluntary_savings)
+    # for non defaultee, cash deductible is only from compulsory savings 
+    self.update_deductible_savings  
+    
+    # self.distribute_default_resolution
+    total_to_be_shared = self.default_payment_amount_to_be_shared
+    self.reload
+    self.update_sub_group_non_defaultee_default_payment_contribution 
+    self.reload
+    self.update_group_non_defaultee_default_payment_contribution 
+    self.reload
+    
+    # rounding up the default payment (total must be paid by each member)
+    self.update_total_amount_in_default_payment
+    
+    # extract the amount from subgroup
+    # extract the amount from group
+    # round up
   end
   
   def finalize_weekly_payment_period
@@ -290,8 +325,8 @@ Phase: loan disbursement finalization
     self.is_weekly_payment_period_closed = true
     self.save 
     
-    self.calculate_outstanding_grace_period_payment 
-    self.update_default_payments # update_default_payment_status + default payment amount (calculate the )
+    self.setup_grace_period_payment 
+    
     self.calculate_default_resolution_amount #member wants to know the money they owe 
     # on all grace period payment, calculate_default_resolution_amount  (it changes!)
   end
