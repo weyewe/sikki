@@ -27,4 +27,6 @@ SAVINGS_STATUS = {
   :group_loan_voluntary_savings => 11
 }
 
-GROUP_LOAN_ROUND_UP_VALUE = 500
+
+DEFAULT_PAYMENT_ROUND_UP_VALUE = 500
+

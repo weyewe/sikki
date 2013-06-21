@@ -27,6 +27,9 @@ class CreateGroupLoanDefaultPayments < ActiveRecord::Migration
       # on the group resolution 
       t.decimal :amount_paid ,  :precision => 10, :scale => 2 , :default => 0 
       #depending on the resolution type: custom or standard
+      
+      
+      t.decimal :amount_assumed_by_office,  :precision => 10, :scale => 2 , :default => 0 
 
       t.timestamps
     end

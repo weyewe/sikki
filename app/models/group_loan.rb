@@ -278,25 +278,49 @@ Phase: loan disbursement finalization
   end
   
   def update_group_non_defaultee_default_payment_contribution
+    group_contribution = self.sub_group_loans.sum("sub_group_default_payment_contribution_amount")  * ( 50.0/100.0 )
+    
+    active_group_glm = self.active_group_loan_memberships.includes(:default_payment)
+    number_of_non_defaultee_in_group = active_group_glm.where(:is_defaultee => false).count 
+    
+    if number_of_non_defaultee_in_group >  0
+       group_non_defaultee_contribution = group_contribution / number_of_non_defaultee_in_group
+       
+       active_group_glm.where(:is_defaultee => false).each do |glm|
+         default_payment = glm.default_payment 
+         default_payment.amount_group_share = group_non_defaultee_contribution
+         default_payment.save
+       end
+    end
   end
   
+  #rounding up
   def update_total_amount_in_default_payment
+    self.active_group_loan_memberships.includes(:default_payment).each do |glm|
+      default_payment = glm.default_payment 
+      total_amount = BigDecimal("0")
+      member = glm.member
+      total_savings = member.saving_book.total
+      total_compulsory_savings = glm.total_compulsory_savings
+      total_voluntary_savings = glm.total_voluntary_savings 
+       
+      if  glm.is_defaultee?
+        default_payment.calculate_defaultee_standard_resolution
+      else
+        default_payment.calculate_non_defaultee_standard_resolution 
+      end 
+    end
   end
   
-  def calculate_default_resolution_amount
-    # line 1222  # check it out! 
-    # for defaultee, update the total amount of cash deductible (compulsory saving + voluntary_savings)
-    # for non defaultee, cash deductible is only from compulsory savings 
+  def calculate_default_resolution_amount 
+    # for defaultee, compulsory and voluntary savings will be deducted 
+    # for non-defaultee, only compulsory savings that will be deducted 
     self.update_deductible_savings  
     
-    # self.distribute_default_resolution
-    total_to_be_shared = self.default_payment_amount_to_be_shared
-    self.reload
     self.update_sub_group_non_defaultee_default_payment_contribution 
-    self.reload
     self.update_group_non_defaultee_default_payment_contribution 
-    self.reload
     
+    self.reload
     # rounding up the default payment (total must be paid by each member)
     self.update_total_amount_in_default_payment
     

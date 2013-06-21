@@ -38,9 +38,6 @@ class SubGroupLoan < ActiveRecord::Base
     # sub_group_contribution_amount = total_to_be_shared * ( 50.0/100.0)
     
     active_subgroup_glm = self.active_group_loan_memberships.includes(:default_payment)
-    
-    active_subgroup_glm_id_list  = active_subgroup_glm.map { |x| x.id  }
-    
     sub_group_amount_to_be_shared = BigDecimal("0")
    
     active_subgroup_glm.each do |glm|
