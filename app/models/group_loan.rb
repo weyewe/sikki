@@ -214,7 +214,8 @@ Phase: loan disbursement finalization
   
   
   def create_default_payments_for_active_members
-    self.active_group_loan_memberships.each do |x|
+    self.active_group_loan_memberships.each do |glm|
+      GroupLoanDefaultPayment.create :group_loan_membership_id => glm.id
     end
   end
   
@@ -449,7 +450,15 @@ Phase: loan disbursement finalization
     # so, they returned some of the voluntary savings returned, to be saved as savings account.
     # in the administration, it is marked as porting voluntary savings and withdrawing the rest 
     self.active_group_loan_memberships.each do |glm|
-      glm.port_compulsory_savings_to_voluntary_savings 
+      glm.port_voluntary_savings_to_savings_account 
+    end
+  end
+  
+  def deactivate_group_loan_memberships_on_group_loan_closing
+    self.active_group_loan_memberships.each do |glm|
+      glm.is_active = false 
+      glm.deactivation_status = GROUP_LOAN_DEACTIVATION_STATUS[:finished_group_loan]
+      glm.save
     end
   end
   
@@ -468,13 +477,10 @@ Phase: loan disbursement finalization
     self.is_closed = true
     self.save 
     self.port_voluntary_savings_to_savings_account # withdraw the remaining 
+    self.deactivate_group_loan_memberships_on_group_loan_closing
   end
   
-  
-  
-  # group_loan_voluntary_savings_withdrawal.rb
-  # group_loan_voluntary_savings_withdrawal.rb
-  # group_loan_port_voluntary_savings.rb
+   
   
   
   

@@ -1,5 +1,5 @@
 class GroupLoanDefaultPayment < ActiveRecord::Base
-  # attr_accessible :title, :body
+  attr_accessible :group_loan_membership_id 
   has_one :transaction_activity, :as => :transaction_source 
   
   def self.rounding_up(amount,  nearest_amount ) 

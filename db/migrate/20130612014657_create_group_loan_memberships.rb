@@ -33,6 +33,7 @@ Deactivation Status
       # and member takes the $$. However, the field officer will persuade the member 
       # to resave part of $$$ or even taking the next group loan 
       t.decimal :closing_withdrawal_amount , :default        => 0,  :precision => 9, :scale => 2
+      # auto calculate the closing_savings_amount  
       t.decimal :closing_savings_amount , :default        => 0,  :precision => 9, :scale => 2
         
       # for history analysis
