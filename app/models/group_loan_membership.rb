@@ -76,7 +76,7 @@ class GroupLoanMembership < ActiveRecord::Base
   end
   
   def remaining_weeks
-    self.group_loan_weekly_responsibilities.where(:has_clearance => false )
+    self.group_loan_weekly_responsibilities.where(:has_clearance => false ).order("group_loan_weekly_task_id ASC")
   end
   
   def number_of_remaining_weeks # excluding the current week 
@@ -92,6 +92,10 @@ class GroupLoanMembership < ActiveRecord::Base
         ]
     ).count != 0
               
+  end
+  
+  def unpaid_backlogs
+    self.group_loan_backlogs.where(:is_paid => false ) 
   end
   
 =begin
