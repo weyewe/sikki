@@ -55,13 +55,8 @@ class GroupLoanDisbursement < ActiveRecord::Base
   end
   
   def create_initial_compulsory_savings 
-    SavingsEntry.create :savings_source_id => self.id,
-                        :savings_source_type => self.class.to_s,
-                        :amount => group_loan_membership.group_loan_product.initial_savings ,
-                        :savings_status => SAVINGS_STATUS[:group_loan_compulsory_savings],
-                        :direction => FUND_DIRECTION[:incoming],
-                        :financial_product_id => self.group_loan_membership.group_loan_id ,
-                        :financial_product_type => self.group_loan_membership.group_loan.to_s
+    SavingsEntry.create_group_loan_disbursement_initial_compulsory_savings( self )
+    
   end
   
 end

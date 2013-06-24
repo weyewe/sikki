@@ -1,6 +1,7 @@
 class GroupLoanWeeklyPayment < ActiveRecord::Base
   # attr_accessible :title, :body
   has_one :transaction_activity, :as => :transaction_source 
+  has_many :savings_entries, :as => :savings_source 
   
   belongs_to :group_loan_membership 
   belongs_to :group_loan 
@@ -58,9 +59,8 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
       self.errors.add(:voluntary_savings_withdrawal_amount, "Jumlah tabungan sukarela: #{voluntary_savings_withdrawal_amount}")
     end
     
-    min_weekly_payment = self.group_loan_membership.group_loan_product.weekly_payment_amount
     
-    if voluntary_savings_withdrawal_amount + cash_amount < total_weeks_paid*min_weekly_payment
+    if voluntary_savings_withdrawal_amount + cash_amount < base_payment_amount
       self.errors.add(:cash_amount, "Tidak cukup untuk pembayaran")
     end
   end
@@ -75,6 +75,11 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     voluntary_savings_withdrawal_amount.present?   and
     cash_amount.present?          
       
+  end
+  
+  def base_payment_amount
+    min_weekly_payment = self.group_loan_membership.group_loan_product.weekly_payment_amount
+    total_weeks_paid*min_weekly_payment
   end
   
   def self.create_object(params)
@@ -103,12 +108,13 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   end
   
   def create_transaction_activities
+   
     TransactionActivity.create :transaction_source_id => self.id, 
                               :transaction_source_type => self.class.to_s,
                               :cash => self.cash_amount  ,
                               :cash_direction => FUND_DIRECTION[:incoming],
-                              :savings => BigDecimal('0'),
-                              :savings_direction => FUND_DIRECTION[:incoming]
+                              :savings =>  self.voluntary_savings_withdrawal_amount,
+                              :savings_direction => FUND_DIRECTION[:outgoing]
                               
   end
   
@@ -122,14 +128,19 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   
   def create_savings_entries
     
-    if is_paying_current_week 
-      payment_count = 1 + number_of_backlogs + number_of_future_weeks
-    else
-      payment_count = 0 + number_of_backlogs + number_of_future_weeks
+    number_of_weeks_paid = self.total_weeks_paid
+    # compulsory_savings
+    (1..number_of_weeks_paid).each do |x|
+      SavingsEntry.create_group_loan_compulsory_savings_addition( self,  group_loan_membership.group_loan_product.min_savings)
+      
+       
     end
-    # voluntary savings addition
-    # voluntary savings withdrawal
-    # compulsory savings addition 
+    
+    # voluntary savings 
+    extra_payment = self.cash_amount + self.voluntary_savings_withdrawal_amount  -  base_payment_amount
+    if extra_payment > BigDecimal( '0' )
+      SavingsEntry.create_group_loan_voluntary_savings_addition( self, extra_payment)
+    end
     
   end
 end
