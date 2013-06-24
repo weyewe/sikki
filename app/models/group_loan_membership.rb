@@ -116,6 +116,24 @@ class GroupLoanMembership < ActiveRecord::Base
     end
   end
   
+  def port_compulsory_savings_to_voluntary_savings
+    GroupLoanPortCompulsorySavings.create :group_loan_membership_id => self.id 
+    
+    self.update_total_compulsory_savings
+    self.update_total_voluntary_savings
+  end
+  
+  def port_voluntary_savings_to_savings_account
+    GroupLoanVoluntarySavingsWithdrawal.create  :group_loan_membership_id => self.id , 
+                                                :amount => self.closing_withdrawal_amount
+                                                
+    GroupLoanPortVoluntarySavings.create :group_loan_membership_id => self.id , 
+                                          :amount => self.closing_savings_amount
+    
+    self.update_total_voluntary_savings # re-sum all transactions 
+    self.member.update_total_savings_account # fuck.. use the buffered state 
+  end
+  
   
   
 end

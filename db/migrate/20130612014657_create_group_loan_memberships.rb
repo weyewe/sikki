@@ -28,6 +28,12 @@ Deactivation Status
       t.decimal :amount_to_be_shared_with_non_defaultee , :default        => 0,  :precision => 9, :scale => 2
       # is_defaultee is to mark whether a particular member is included in the default loan resolution calculation
       
+      
+      # on group loan closing, the voluntary savings is returned
+      # and member takes the $$. However, the field officer will persuade the member 
+      # to resave part of $$$ or even taking the next group loan 
+      t.decimal :closing_withdrawal_amount , :default        => 0,  :precision => 9, :scale => 2
+      t.decimal :closing_savings_amount , :default        => 0,  :precision => 9, :scale => 2
         
       # for history analysis
       # we can count the number of GroupLoanBacklog generated (to understand whether a member is NPL or whatever)

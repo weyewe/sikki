@@ -5,18 +5,16 @@ class GroupLoanDisbursement < ActiveRecord::Base
   
   validates_uniqueness_of :group_loan_membership_id 
   
-  after_create :create_transaction_activity , :create_initial_compulsory_savings
+  after_create :create_transaction_activities , :create_initial_compulsory_savings
   
   
-  def create_transaction_activity 
+  def create_transaction_activities 
     # delta_savings => customer perspective 
     # delta_cash => company perspective  
     
-    t.boolean :is_auto_deduct_admin_fee,        :default => true 
-    t.boolean :is_auto_deduct_initial_savings , :default => true
-    
-    if group_loan.is_auto_deduct_admin_fee and group_loan.is_auto_deduct_initial_savings
-    end
+  
+    # if group_loan.is_auto_deduct_admin_fee and group_loan.is_auto_deduct_initial_savings
+    # end
     
     ## the main use case is auto deduct admin fee and auto deduct initial savings 
     # if not group_loan.is_auto_deduct_admin_fee and group_loan.is_auto_deduct_initial_savings

@@ -274,7 +274,6 @@ Phase: loan disbursement finalization
   
   def update_sub_group_non_defaultee_default_payment_contribution
     self.sub_group_loans.each do |sub_group|
-      # sub_group.update_sub_group_default_payment_contribution(total_to_be_shared)
       sub_group.update_sub_group_default_payment_contribution
     end
   end
@@ -319,16 +318,14 @@ Phase: loan disbursement finalization
     # for non-defaultee, only compulsory savings that will be deducted 
     self.update_deductible_savings  
     
-    self.update_sub_group_non_defaultee_default_payment_contribution 
+    # sub_group share 
+    self.update_sub_group_non_defaultee_default_payment_contribution   
+    
+    # group_share 
     self.update_group_non_defaultee_default_payment_contribution 
     
     self.reload
-    # rounding up the default payment (total must be paid by each member)
-    self.update_total_amount_in_default_payment
-    
-    # extract the amount from subgroup
-    # extract the amount from group
-    # round up
+    self.update_total_amount_in_default_payment  # rounding up to the nearest exchange ( 500 rupiah )
   end
   
   def finalize_weekly_payment_period
@@ -392,6 +389,35 @@ Phase: loan disbursement finalization
  Business Constraint: the members want the savings to be returned fast. 
 =end
 
+  def valid_custom_payment_amount?
+    self.total_default_amount <= self.total_custom_default_resolution_amount 
+  end
+
+  def execute_default_resolution
+    if self.default_payment_resolution_case == GROUP_LOAN_DEFAULT_PAYMENT_CASE[:standard]
+      self.active_group_loan_memberships.each do |glm|
+        glm.default_payment.execute_standard_payment 
+      end
+    elsif self.default_payment_resolution_case == GROUP_LOAN_DEFAULT_PAYMENT_CASE[:custom]
+
+      if not self.valid_custom_payment_amount?  
+        errors.add(:generic_errors, "Jumlah default resolution dengan skema custom tidak cukup")
+        return self
+      end
+      
+      
+      self.active_group_loan_memberships.each do |glm|
+        glm.default_payment.execute_custom_payment 
+      end
+    end
+  end
+  
+  def port_compulsory_savings_to_voluntary_savings
+    self.active_group_loan_memberships.each do |glm|
+      glm.port_compulsory_savings_to_voluntary_savings 
+    end
+  end
+
   def finalize_default_resolution_period
     if not self.is_default_payment_resolution_phase?  
       errors.add(:generic_errors, "Bukan di fase pemotongan tabungan wajib untuk menutupi default")
@@ -416,6 +442,18 @@ Phase: loan disbursement finalization
 # field worker returns to the office, brings the money re-saved @savings account
 # for every withdrawal, create group loan savings withdrawal
 # then, click close group loan. DONE. 
+
+  def port_voluntary_savings_to_savings_account
+    # scenario: after default resolution, the member is allowed to withdraw all the voluntary savings
+    # however, they are advised to save some of those voluntary savings
+    # so, they returned some of the voluntary savings returned, to be saved as savings account.
+    # in the administration, it is marked as porting voluntary savings and withdrawing the rest 
+    self.active_group_loan_memberships.each do |glm|
+      glm.port_compulsory_savings_to_voluntary_savings 
+    end
+  end
+  
+  
   def close
     if not self.is_closing_phase?  
       errors.add(:generic_errors, "Bukan di fase  penutupan pinjaman group")
@@ -429,7 +467,7 @@ Phase: loan disbursement finalization
 
     self.is_closed = true
     self.save 
-    self.remaining_voluntary_savings_to_savings_account
+    self.port_voluntary_savings_to_savings_account # withdraw the remaining 
   end
   
   
