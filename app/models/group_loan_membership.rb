@@ -75,6 +75,10 @@ class GroupLoanMembership < ActiveRecord::Base
     self.save
   end
   
+  def number_of_remaining_weeks # excluding the current week 
+    
+  end
+  
 =begin
   Entering the grace period
 =end
