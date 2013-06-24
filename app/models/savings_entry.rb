@@ -24,6 +24,9 @@ class SavingsEntry < ActiveRecord::Base
                         :direction => FUND_DIRECTION[:incoming],
                         :financial_product_id => savings_source.group_loan_membership.group_loan_id ,
                         :financial_product_type => savings_source.group_loan_membership.group_loan.class.to_s
+                        
+    group_loan_membership = savings_source.group_loan_membership
+    group_loan_membership.update_total_compulsory_savings 
   end
 
   def self.create_group_loan_voluntary_savings_addition( savings_source, amount)
@@ -34,6 +37,9 @@ class SavingsEntry < ActiveRecord::Base
                         :direction              => FUND_DIRECTION[:incoming],
                         :financial_product_id   => savings_source.group_loan_id ,
                         :financial_product_type => savings_source.group_loan.class.to_s
+    
+    group_loan_membership = savings_source.group_loan_membership
+    group_loan_membership.update_total_voluntary_savings
   end
   
   def self.create_group_loan_compulsory_savings_addition( savings_source, amount ) 
@@ -44,6 +50,9 @@ class SavingsEntry < ActiveRecord::Base
                         :direction => FUND_DIRECTION[:incoming],
                         :financial_product_id => savings_source.group_loan_id ,
                         :financial_product_type => savings_source.group_loan.class.to_s
+  
+    group_loan_membership = savings_source.group_loan_membership
+    group_loan_membership.update_total_compulsory_savings
   end
   
   

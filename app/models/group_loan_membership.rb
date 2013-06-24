@@ -75,8 +75,23 @@ class GroupLoanMembership < ActiveRecord::Base
     self.save
   end
   
+  def remaining_weeks
+    self.group_loan_weekly_responsibilities.where(:has_clearance => false )
+  end
+  
   def number_of_remaining_weeks # excluding the current week 
-    
+    self.remaining_weeks.count 
+  end
+  
+  
+  def has_full_payment_status?( group_loan_weekly_task ) 
+    GroupLoanWeeklyResponsibility.where(
+      :group_loan_weekly_task_id => group_loan_weekly_task.id ,
+      :payment_status => [
+          GROUP_LOAN_WEEKLY_PAYMENT_STATUS[:full_payment]
+        ]
+    ).count != 0
+              
   end
   
 =begin

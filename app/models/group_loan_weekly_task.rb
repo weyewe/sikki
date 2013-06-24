@@ -9,4 +9,5 @@ class GroupLoanWeeklyTask < ActiveRecord::Base
   # week 7
   # week 8 
   has_many :group_loan_weekly_responsibilities 
+  has_many :group_loan_weekly_payments 
 end

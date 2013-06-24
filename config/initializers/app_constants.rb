@@ -36,6 +36,20 @@ SAVINGS_STATUS = {
   
 }
 
+GROUP_LOAN_WEEKLY_PAYMENT_STATUS = {
+  :unmarked => 1 , 
+  :no_payment_declared => 2 ,
+  :only_savings => 3 , 
+  :full_payment => 4 
+}
+
+GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS = {
+  :unmarked => 1 , 
+  :present => 2, 
+  :absent => 3 , 
+  :late => 4 
+}
+
 
 DEFAULT_PAYMENT_ROUND_UP_VALUE = 500
 
