@@ -83,37 +83,17 @@ class GroupLoanMembership < ActiveRecord::Base
     self.remaining_weeks.count 
   end
   
-  
-  def has_full_payment_status?( group_loan_weekly_task ) 
-    GroupLoanWeeklyResponsibility.where(
-      :group_loan_weekly_task_id => group_loan_weekly_task.id ,
-      :payment_status => [
-          GROUP_LOAN_WEEKLY_PAYMENT_STATUS[:full_payment]
-        ]
-    ).count != 0
-              
-  end
+   
   
   def unpaid_backlogs
     self.group_loan_backlogs.where(:is_paid => false ) 
   end
   
-  def mark_weekly_responsibility_payment(weekly_responsibility, group_loan_weekly_payment )
-    return if weekly_responsibility.has_clearance? 
-    
-    weekly_responbility.clearance_source_id = group_loan_weekly_payment.id
-    weekly_responsility.clearance_source_type = group_loan_weekly_payment.class.to_s
-    
-    if group_loan_weekly_payment.is_paying_current_week? and 
-        not group_loan_weekly_payment.is_only_savings? and 
-        not group_loan_weekly_payment.is_no_payment? 
-        
-      weekly_responsibility.payment_status = GROUP_LOAN_WEEKLY_PAYMENT_STATUS[:full_payment]
-      
-    end
-    
-    weekly_responsibility.save 
+  
+  def has_cleared_weekly_payment?(group_loan_weekly_task)
+    self.remaining_weeks.where(:group_loan_weekly_task_id => group_loan_weekly_task.id ).count == 0 
   end
+   
   
 =begin
   Entering the grace period

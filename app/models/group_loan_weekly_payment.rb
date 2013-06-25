@@ -36,7 +36,8 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   end
   
   def no_payment_for_current_week_if_it_has_been_cleared
-    if self.group_loan_membership.present? and 
+    if  self.group_loan_membership_id.present? and 
+        self.group_loan_weekly_task_id.present? and 
         self.group_loan_membership.has_cleared_weekly_payment?( self.group_loan_weekly_task )
        self.errors.add(:is_paying_current_week, "Minggu ini telah dibayar di pembayaran sebelumnya")
     end
@@ -111,43 +112,78 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   end
   
   def create_group_backlog_payments
-    if number_of_backlogs != 0 
-      self.group_loan_membership.unpaid_backlogs.limit(self.number_of_backlogs).each do |backlog|
-        backlog.create_payment( self ) 
-      end
+    self.group_loan_membership.unpaid_backlogs.limit(self.number_of_backlogs).each do |backlog|
+      backlog.create_payment( self ) 
     end
   end
   
   def create_current_week_payment
-    if is_paying_current_week?
-      current_weekly_responsibility =  group_loan_membership.
-                                        remaining_weeks.
-                                        where(
-                                          :group_loan_weekly_task_id => self.group_loan_weekly_task_id,
-                                          :has_clearance => false 
-                                        ).first
-                                        
-      group_loan_membership.mark_weekly_responsibility_payment( current_weekly_responsibility, self )
+    current_weekly_responsibility =  group_loan_membership.
+                                      remaining_weeks.
+                                      where(
+                                        :group_loan_weekly_task_id => self.group_loan_weekly_task_id,
+                                        :has_clearance => false 
+                                      ).first
+                                      
+    # group_loan_membership.mark_weekly_responsibility_payment( current_weekly_responsibility, self )
+    payment_status = nil 
+    if self.is_paying_current_week and not self.is_only_savings and not self.is_no_payment
+      payment_status =  GROUP_LOAN_WEEKLY_PAYMENT_STATUS[:full_payment]
+    elsif not self.is_paying_current_week and  self.is_only_savings and not self.is_no_payment
+      payment_status =  GROUP_LOAN_WEEKLY_PAYMENT_STATUS[:only_savings]
+    elsif not self.is_paying_current_week and  not self.is_only_savings and  self.is_no_payment
+      payment_status =  GROUP_LOAN_WEEKLY_PAYMENT_STATUS[:no_payment_declared]
     end
+       
+    current_weekly_responsibility.create_weekly_responsibility_clearance( self , payment_status)
+    current_weekly_responsibility.assign_group_loan_weekly_payment( self )
+  end
+  
+  # can only be performed if the current week has been paid in the past ( future payment ) 
+  # payment_status marked == full_payment 
+  def create_only_voluntary_savings_weekly_payment
+    current_weekly_responsibility =  group_loan_membership.
+                                      remaining_weeks.
+                                      where(
+                                        :group_loan_weekly_task_id => self.group_loan_weekly_task_id,
+                                        :has_clearance => true # cleared in the past  
+                                      ).first
+                                      
+    current_weekly_responsibility.assign_group_loan_weekly_payment( self ) 
   end
   
   def create_future_week_payments
-    if number_of_future_weeks != 0 
-      count = 1 
-      group_loan_membership.remaining_weeks.each do |weekly_responsibility|
-        group_loan_membership.mark_weekly_responsibility_payment( weekly_responsibility, self )
-        break if count == number_of_future_weeks
-        count += 1 
-      end
+    count = 1 
+    group_loan_membership.remaining_weeks.each do |weekly_responsibility|
+      weekly_responsibility.create_weekly_responsibility_clearance( self , GROUP_LOAN_WEEKLY_PAYMENT_STATUS[:full_payment] )
+      break if count == number_of_future_weeks
+      count += 1 
     end
   end
   
-  
+   
   def update_affected_weekly_responsibilities
-    self.create_group_backlog_payments
-    self.create_current_week_payment 
-    self.create_future_week_payments  
+    self.create_group_backlog_payments  if self.number_of_backlogs != 0 
+    self.create_current_week_payment  if self.is_paying_current_week?
+    self.create_only_voluntary_savings_weekly_payment if self.is_only_voluntary_savings?  
+    self.create_future_week_payments  if self.number_of_future_weeks != 0 
   end
+  
+=begin
+  Case: 
+  1. Paying full payment for this current week + some extra savings 
+  2. Paying only savings for the current week (no money)
+  3. Declare that he can't make the payment for the current week
+  
+  4. The current week is paid by the previous weekly meeting. Hence, he has no obligation to make payment. 
+      But, he still makes the payment.
+      
+      How can the weekly responsibility handles it? 
+      weekly_responsibility has clearance_source (signifies which payment that cleared the weekly responsibility).
+      @ week 1, the member paid for 3 weeks in advance. 
+      @ And, it just happens that on the week 2, this member still wants to make payment. 
+        # how can the weekly responsibility cater to this extra payment? 
+=end
   
   
   def self.create_object(params)

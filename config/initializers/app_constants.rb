@@ -40,7 +40,7 @@ GROUP_LOAN_WEEKLY_PAYMENT_STATUS = {
   :unmarked => 1 , 
   :no_payment_declared => 2 ,
   :only_savings => 3 , 
-  :full_payment => 4 
+  :full_payment => 4  
 }
 
 GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS = {
