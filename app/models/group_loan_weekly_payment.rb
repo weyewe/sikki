@@ -3,21 +3,84 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   has_one :transaction_activity, :as => :transaction_source 
   has_many :savings_entries, :as => :savings_source 
   
+  has_many :group_loan_backlogs, :as => :backlog_clearance_source 
+  
   belongs_to :group_loan_membership 
   belongs_to :group_loan 
   
+  
+  # we have to separate validation for update and object creation 
+  # these shite are working for CREATE
+  validate :can_only_select_one_weekly_payment_mode
   validate :number_of_backlogs_payment_must_not_exceed_unpaid_backlogs
   validate :number_of_future_weeks_payment_must_not_exceed_the_remaining_weeks
-  # validate :current_week_must_be_paid_if_there_is_enough_cash
   validate :amount_must_be_sufficient
-  validate :no_double_group_loan_weekly_payment
-  
+  validate :current_week_payment_is_the_highest_priority
+  validate :no_double_group_loan_weekly_payment  # for a given group_loan_weekly_task 
   validate :no_payment_for_current_week_if_it_has_been_cleared
-  
   validate :only_savings_validity
+  
+  # How about validation mechanism for UPDATE? => banzai! 
+  
+  
   
   
   validates_presence_of :group_loan_membership_id , :group_loan_weekly_task_id 
+  
+  def can_only_select_one_weekly_payment_mode
+    if all_fields_present?  
+      
+      # case 1: current week has not been paid. 
+      if not group_loan_membership.has_cleared_current_week?(group_loan_weekly_task)
+        results = [ 
+          is_paying_current_week, 
+          is_only_savings, 
+          is_no_payment 
+        ]
+
+        truth_counter = 0 
+
+        resuts.each do |truth_value|
+          if truth_value == true 
+            truth_counter += 1 
+          end
+        end
+
+        if truth_counter != 1 
+          msg = 'Hanya boleh memilih salah satu: pembayaran minggu ini, " +
+                " hanya tabungan, tidak ada pembayaran, atau hanya pembayaran extra'
+                
+          self.errors.add(:is_paying_current_week , msg)  if is_paying_current_week?
+          self.errors.add(:is_only_savings , msg)  if is_only_savings?
+          self.errors.add(:is_no_payment , msg)  if is_no_payment?
+        end
+        
+        if is_only_voluntary_savings?
+          self.errors.add(:is_only_voluntary_savings , 'Hanya dapat dipilih jika minggu ini sudah dibayar sebelumnya')
+        end
+      end
+      
+      # case 2: current week has been paid (past). options: 
+      # => 1. only_voluntary_savings    if there is no backlog or future payments
+      # => 2. only_voluntary_savings should be false if there is backlog or future payment
+      if  group_loan_membership.has_cleared_current_week?(group_loan_weekly_task)
+        self.errors.add(:is_paying_current_week, "Sudah dibayar") if is_paying_current_week 
+        self.errors.add(:is_only_savings, "Sudah dibayar") if is_only_savings 
+        self.errors.add(:is_no_payment, "Sudah dibayar") if is_no_payment 
+        
+        if  ( number_of_future_weeks != 0 or number_of_backlogs != 0 )  and 
+            is_only_voluntary_savings
+          self.errors.add(:is_only_voluntary_savings , 'Ada pembayaran backlog atau untuk minggu depan')
+        end
+        
+        if  ( number_of_future_weeks == 0 and number_of_backlogs == 0 )  and 
+            not is_only_voluntary_savings
+          self.errors.add(:is_only_voluntary_savings , 'Pembayaran harus untuk tabungan sukarela')
+        end
+      end
+     
+    end
+  end
   
   def number_of_backlogs_payment_must_not_exceed_unpaid_backlogs
     if   self.group_loan_membership.present? and
@@ -62,10 +125,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
       self.errors.add(:cash_amount, "Tidak boleh 0")
     end
   end
-  
-  def current_week_must_be_paid_if_there_is_enough_cash
-    
-  end
+ 
   
   def amount_must_be_sufficient
     return if  not all_fields_present?
@@ -80,17 +140,27 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     end
   end
   
+  def current_week_payment_is_the_highest_priority
+    # there are : current week, backlog, and future weeks 
+    return if not all_fields_present?
+    
+    
+    if not group_loan_membership.has_cleared_weekly_payment?(group_loan_weekly_task)
+      if not is_paying_current_week?   
+        msg = "Prioritas Pembayaran: minggu berjalan"
+        self.errors.add(:number_of_backlogs, msg ) if number_of_backlogs != 0 
+        self.errors.add(:number_of_future_weeks, msg ) if number_of_future_weeks != 0 
+      end
+    end
+    
+  end
+  
   def no_double_group_loan_weekly_payment
-    if  self.group_loan_membership_id.present? and 
-        self.group_loan_weekly_task_id.present? 
-        
-        # should not be double => 
-        if not self.persisted? and 
-            GroupLoanWeeklyPayment.where(:group_loan_membership_id => self.group_loan_membership_id , 
-                                         :group_loan_weekly_task_id => self.group_loan_weekly_task_id ).count == 1 
-          
-          self.errors.add(:group_loan_weekly_task_id, "Sudah ada pembayaran untuk minggu ini")
-        end 
+    return if not all_fields_present?
+    
+    if  is_paying_current_week?  and group_loan_membership.has_cleared_weekly_payment?(group_loan_weekly_task)  
+      msg = "Sudah ada pembayaran untuk minggu ini"
+      self.errors.add(:is_paying_current_week, msg ) 
     end
   end
   
@@ -164,7 +234,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
    
   def update_affected_weekly_responsibilities
     self.create_group_backlog_payments  if self.number_of_backlogs != 0 
-    self.create_current_week_payment  if self.is_paying_current_week?
+    self.create_current_week_payment  if self.is_paying_current_week? or self.is_only_savings? or self.is_no_payment?
     self.create_only_voluntary_savings_weekly_payment if self.is_only_voluntary_savings?  
     self.create_future_week_payments  if self.number_of_future_weeks != 0 
   end
@@ -201,6 +271,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
 
 
     if new_object.save 
+      # where should we generate the backlog? 
       new_object.update_affected_weekly_responsibilities 
       new_object.create_transaction_activities
       new_object.create_savings_entries 
@@ -235,16 +306,22 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   def create_savings_entries
     number_of_weeks_paid = self.total_weeks_paid
     
-    #compulsory savings
-    (1..number_of_weeks_paid).each do |x|
-      SavingsEntry.create_group_loan_compulsory_savings_addition( self,  group_loan_membership.group_loan_product.min_savings)
-    end
-    
-    #voluntary savings 
-    extra_payment = self.cash_amount + self.voluntary_savings_withdrawal_amount  -  base_payment_amount
-    if extra_payment > BigDecimal( '0' )
-      SavingsEntry.create_group_loan_voluntary_savings_addition( self, extra_payment)
-    end
+     if not is_only_voluntary_savings?
+       #compulsory savings
+       (1..number_of_weeks_paid).each do |x|
+         SavingsEntry.create_group_loan_compulsory_savings_addition( self,  group_loan_membership.group_loan_product.min_savings)
+       end
+
+       #voluntary savings 
+       extra_payment = self.cash_amount + self.voluntary_savings_withdrawal_amount  -  base_payment_amount
+       if extra_payment > BigDecimal( '0' )
+         SavingsEntry.create_group_loan_voluntary_savings_addition( self, extra_payment)
+       end
+       
+     else
+       
+       SavingsEntry.create_group_loan_only_voluntary_savings_payment( self,  self.cash_amount)
+     end
   end
  
 end

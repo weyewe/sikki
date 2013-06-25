@@ -3,7 +3,9 @@ class CreateGroupLoanWeeklyPayments < ActiveRecord::Migration
     create_table :group_loan_weekly_payments do |t|
       
       t.integer :group_loan_weekly_task_id           
-      t.integer :group_loan_membership_id            
+      t.integer :group_loan_membership_id          
+      t.integer :group_loan_id 
+        
       t.integer :number_of_backlogs                  
       t.boolean :is_paying_current_week              , :default => true 
       t.boolean :is_only_savings                      , :default => false         
@@ -21,6 +23,8 @@ class CreateGroupLoanWeeklyPayments < ActiveRecord::Migration
       t.integer :number_of_future_weeks                    
       
       
+      t.boolean :is_confirmed, :default => false 
+      t.datetime :confirmation_datetime 
 
       t.timestamps
     end
