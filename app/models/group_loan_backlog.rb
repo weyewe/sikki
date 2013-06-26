@@ -6,4 +6,12 @@ class GroupLoanBacklog < ActiveRecord::Base
   belongs_to :backlog_clearance_source, :polymorphic => true 
   
   
+  def create_payment( backlog_clearance_source )
+    self.is_paid = true 
+    self.backlog_clearance_source_id = backlog_clearance_source.id 
+    self.backlog_clearance_source_type = backlog_clearance_source.class.to_s
+    self.save  
+  end
+  
+  
 end

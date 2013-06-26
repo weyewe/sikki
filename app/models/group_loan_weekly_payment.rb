@@ -13,12 +13,15 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   # these shite are working for CREATE
   validate :can_only_select_one_weekly_payment_mode
   validate :number_of_backlogs_payment_must_not_exceed_unpaid_backlogs
-  validate :number_of_future_weeks_payment_must_not_exceed_the_remaining_weeks
+  validate :number_of_future_weeks_payment_must_not_exceed_the_remaining_weeks_excluding_current_week
   validate :amount_must_be_sufficient
+  validate :no_negative_payment_amount
   validate :current_week_payment_is_the_highest_priority
   validate :no_double_group_loan_weekly_payment  # for a given group_loan_weekly_task 
-  validate :no_payment_for_current_week_if_it_has_been_cleared
   validate :only_savings_validity
+  validate :total_payment_must_be_zero_if_no_payment_declaration
+  validate :total_payment_must_not_be_zero_if_non_no_payment_declaration
+
   
   # How about validation mechanism for UPDATE? => banzai! 
   
@@ -90,24 +93,27 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     end
   end
   
-  def number_of_future_weeks_payment_must_not_exceed_the_remaining_weeks
-    if   self.group_loan_membership.present? and
-         self.number_of_future_weeks.present?  and
-         self.number_of_future_weeks > self.group_loan_membership.number_of_remaining_weeks - 1
-       self.errors.add(:number_of_future_weeks, "Jumlah pembayaran kedepan yang belum dibayar: #{self.group_loan_membership.number_of_remaining_weeks - 1}")
+  
+  def number_of_available_future_weeks 
+    if group_loan_membership.has_cleared_weekly_payment?(group_loan_weekly_task)
+      return self.group_loan_membership.number_of_remaining_weeks 
+    else
+      return self.group_loan_membership.number_of_remaining_weeks  - 1 
     end
   end
   
-  def no_payment_for_current_week_if_it_has_been_cleared
-    if  self.group_loan_membership_id.present? and 
-        self.group_loan_weekly_task_id.present? and 
-        self.group_loan_membership.has_cleared_weekly_payment?( self.group_loan_weekly_task )
-       self.errors.add(:is_paying_current_week, "Minggu ini telah dibayar di pembayaran sebelumnya")
+  def number_of_future_weeks_payment_must_not_exceed_the_remaining_weeks_excluding_current_week
+    if   self.group_loan_membership.present? and
+         self.number_of_future_weeks.present?  and 
+         self.number_of_future_weeks > self.number_of_available_future_weeks 
+       self.errors.add(:number_of_future_weeks, "Jumlah pembayaran kedepan yang belum dibayar: #{self.number_of_available_future_weeks}")
     end
   end
+  
   
   def only_savings_validity
-    return if not group_loan_membership_id.present? or self.is_only_savings == false 
+    return if not all_fields_present? 
+    return if not is_only_savings?
     
     if number_of_backlogs.present? and number_of_backlogs != 0 
       self.errors.add(:number_of_backlogs, "Hanya pembayaran tabungan")
@@ -121,8 +127,30 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
       self.errors.add(:voluntary_savings_withdrawal_amount, "Hanya pembayaran tabungan")
     end
     
-    if cash_amount.present? and cash_amount !=  BigDecimal('0')
+    if cash_amount.present? and cash_amount ==  BigDecimal('0')
       self.errors.add(:cash_amount, "Tidak boleh 0")
+    end
+  end
+  
+  
+  
+  def total_payment_must_be_zero_if_no_payment_declaration
+    return if  not all_fields_present?
+    if is_no_payment?
+      self.errors.add(:voluntary_savings_withdrawal_amount, "Tidak ada pembayaran") if voluntary_savings_withdrawal_amount != BigDecimal('0')
+      self.errors.add(:cash_amount, "Tidak ada pembayaran") if cash_amount != BigDecimal('0')  
+    end
+  end
+  
+  def total_payment_must_not_be_zero_if_non_no_payment_declaration
+    return if  not all_fields_present?
+    
+    if  not is_no_payment? and 
+        voluntary_savings_withdrawal_amount + cash_amount <= BigDecimal('0')
+      
+      msg = 'Total pembayaran tidak boleh 0'
+      self.errors.add(:voluntary_savings_withdrawal_amount, msg)  
+      self.errors.add(:cash_amount, msg)  
     end
   end
  
@@ -139,6 +167,13 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
       self.errors.add(:cash_amount, "Tidak cukup untuk pembayaran")
     end
   end
+  
+  
+  def no_negative_payment_amount
+    self.errors.add(:cash_amount, "Tidak cukup untuk pembayaran") if cash_amount < BigDecimal('0')
+    self.errors.add(:voluntary_savings_withdrawal_amount, "Tidak cukup untuk pembayaran") if voluntary_savings_withdrawal_amount < BigDecimal('0')
+  end
+  
   
   def current_week_payment_is_the_highest_priority
     # there are : current week, backlog, and future weeks 
@@ -176,10 +211,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     cash_amount.present? 
   end
   
-  def base_payment_amount
-    min_weekly_payment = self.group_loan_membership.group_loan_product.weekly_payment_amount
-    total_weeks_paid*min_weekly_payment
-  end
+  
   
   def create_group_backlog_payments
     self.group_loan_membership.unpaid_backlogs.limit(self.number_of_backlogs).each do |backlog|
@@ -225,6 +257,9 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   def create_future_week_payments
     count = 1 
     group_loan_membership.remaining_weeks.each do |weekly_responsibility|
+      # exclude the current week
+      next if weekly_responsibility.group_loan_weekly_task_id == self.group_loan_weekly_task_id 
+      
       weekly_responsibility.create_weekly_responsibility_clearance( self , GROUP_LOAN_WEEKLY_PAYMENT_STATUS[:full_payment] )
       break if count == number_of_future_weeks
       count += 1 
@@ -260,6 +295,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     new_object                                     = self.new 
     new_object.group_loan_weekly_task_id           = params[:group_loan_weekly_task_id]
     new_object.group_loan_membership_id            = params[:group_loan_membership_id]
+    new_object.group_loan_id                       = params[:group_loan_id]
     new_object.number_of_backlogs                  = params[:number_of_backlogs]
     new_object.is_paying_current_week              = params[:is_paying_current_week]
     new_object.is_only_savings                     = params[:is_only_savings]
@@ -269,23 +305,19 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     new_object.cash_amount                         = BigDecimal(params[:cash_amount])
 
 
-
-    if new_object.save 
-      # where should we generate the backlog? 
-      new_object.update_affected_weekly_responsibilities 
-      new_object.create_transaction_activities
-      new_object.create_savings_entries 
-    end 
-
-    
+ 
+    new_object.save 
     return new_object 
   end
   
   def update_object(params) 
+    # update pre-confirm
+    # update post-confirm 
   end
   
+  
+  
   def create_transaction_activities
-   
     TransactionActivity.create :transaction_source_id => self.id, 
                               :transaction_source_type => self.class.to_s,
                               :cash => self.cash_amount  ,
@@ -301,6 +333,11 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     else
       return = 0 + number_of_backlogs + number_of_future_weeks
     end
+  end
+  
+  def base_payment_amount
+    min_weekly_payment = self.group_loan_membership.group_loan_product.weekly_payment_amount
+    total_weeks_paid*min_weekly_payment
   end
   
   def create_savings_entries
@@ -323,5 +360,19 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
        SavingsEntry.create_group_loan_only_voluntary_savings_payment( self,  self.cash_amount)
      end
   end
+  
+  
+  
+  
+  # execute the transaction and past effect 
+  def confirm
+    return if self.is_confirmed? 
+    
+    new_object.update_affected_weekly_responsibilities 
+    new_object.create_transaction_activities
+    new_object.create_savings_entries
+  end
+  
+  
  
 end
