@@ -8,7 +8,8 @@
 class GroupLoanIndependentPayment < ActiveRecord::Base
   # attr_accessible :title, :body
   has_one :transaction_activity, :as => :transaction_source 
-   belongs_to :group_loan 
+  belongs_to :group_loan 
+  belongs_to :group_loan_membership 
   
   validate :must_be_attached_to_unconfirmed_weekly_task
   validate :number_of_backlogs_payment_must_not_exceed_unpaid_backlogs
@@ -18,33 +19,67 @@ class GroupLoanIndependentPayment < ActiveRecord::Base
   
   
   
+  def all_fields_present?
+    group_loan_membership_id.present?              and   
+    group_loan_weekly_task_id.present?             and       
+    number_of_backlogs.present?                    and
+    number_of_future_weeks.present?                and
+    voluntary_savings_withdrawal_amount.present?   and
+    cash_amount.present? 
+  end
+  
+  
+  
   def must_be_attached_to_unconfirmed_weekly_task 
     if self.group_loan.group_loan_weekly_tasks.where(:is_confirmed => false).count == 0
       self.errors.add(:generic_errors, "Fase pembayaran cicilan sudah selesai.")
     end
   end
   
+  
+  
   def number_of_backlogs_payment_must_not_exceed_unpaid_backlogs
+    return if not all_fields_present?
+    
+    if   self.group_loan_membership.unpaid_backlogs.count > self.number_of_backlogs
+      self.errors.add(:number_of_backlogs, "Jumlah backlog yang belum dibayar: #{self.group_loan_membership.unpaid_backlogs.count}")
+    end
   end
   
-  def number_of_future_weeks_payment_must_not_exceed_the_remaining_weeks
+  
+  def number_of_available_future_weeks 
+    return self.group_loan_membership.number_of_remaining_weeks  
+  end
+  
+  def number_of_future_weeks_payment_must_not_exceed_the_remaining_weeks 
+    return if not all_fields_present?
+    
+    if   self.number_of_future_weeks > self.number_of_available_future_weeks 
+       self.errors.add(:number_of_future_weeks, "Jumlah pembayaran kedepan yang belum dibayar: #{self.number_of_available_future_weeks}")
+    end
   end
   
   def amount_must_be_sufficient
+    return if  not all_fields_present?
+    
+    if voluntary_savings_withdrawal_amount > group_loan_membership.total_voluntary_savings
+      self.errors.add(:voluntary_savings_withdrawal_amount, "Jumlah tabungan sukarela: #{group_loan_membership.total_voluntary_savings}")
+    end
+    
+    
+    if voluntary_savings_withdrawal_amount + cash_amount < base_payment_amount
+      self.errors.add(:cash_amount, "Tidak cukup untuk pembayaran")
+    end
   end
   
   def no_negative_payment_amount
+    self.errors.add(:cash_amount, "Tidak cukup untuk pembayaran") if cash_amount < BigDecimal('0')
+    self.errors.add(:voluntary_savings_withdrawal_amount, "Tidak cukup untuk pembayaran") if voluntary_savings_withdrawal_amount < BigDecimal('0')
   end
-  
-  
-  
-  
-  
   
   def first_unconfirmed_weekly_task
     group_loan.group_loan_weekly_tasks.where(:is_confirmed => false).order("id ASC").first 
   end
-  
   
   def self.create_object( params ) 
     new_object                                     = self.new 
@@ -118,7 +153,7 @@ class GroupLoanIndependentPayment < ActiveRecord::Base
     number_of_weeks_paid = self.total_weeks_paid
     
       
-     #compulsory savings
+     #compulsory savings, from mandatory weekly payment 
      (1..number_of_weeks_paid).each do |x|
        SavingsEntry.create_group_loan_compulsory_savings_addition( self,  group_loan_membership.group_loan_product.min_savings)
      end

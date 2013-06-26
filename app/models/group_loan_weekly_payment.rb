@@ -86,9 +86,9 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   end
   
   def number_of_backlogs_payment_must_not_exceed_unpaid_backlogs
-    if   self.group_loan_membership.present? and
-         self.number_of_backlogs.present? and 
-         self.group_loan_membership.unpaid_backlogs.count > self.number_of_backlogs
+    return if not all_fields_present?
+    
+    if   self.group_loan_membership.unpaid_backlogs.count > self.number_of_backlogs
       self.errors.add(:number_of_backlogs, "Jumlah backlog yang belum dibayar: #{self.group_loan_membership.unpaid_backlogs.count}")
     end
   end
@@ -103,9 +103,9 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   end
   
   def number_of_future_weeks_payment_must_not_exceed_the_remaining_weeks_excluding_current_week
-    if   self.group_loan_membership.present? and
-         self.number_of_future_weeks.present?  and 
-         self.number_of_future_weeks > self.number_of_available_future_weeks 
+    return if not all_fields_present?
+    
+    if   self.number_of_future_weeks > self.number_of_available_future_weeks 
        self.errors.add(:number_of_future_weeks, "Jumlah pembayaran kedepan yang belum dibayar: #{self.number_of_available_future_weeks}")
     end
   end
@@ -159,7 +159,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     return if  not all_fields_present?
     
     if voluntary_savings_withdrawal_amount > group_loan_membership.total_voluntary_savings
-      self.errors.add(:voluntary_savings_withdrawal_amount, "Jumlah tabungan sukarela: #{voluntary_savings_withdrawal_amount}")
+      self.errors.add(:voluntary_savings_withdrawal_amount, "Jumlah tabungan sukarela: #{group_loan_membership.total_voluntary_savings}")
     end
     
     
