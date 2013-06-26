@@ -155,6 +155,7 @@ class GroupLoan < ActiveRecord::Base
     
     self.is_started = true
     self.save 
+   
   end
   
 =begin
@@ -214,9 +215,24 @@ Phase: loan disbursement finalization
   end
   
   
-  def create_default_payments_for_active_members
+  def create_default_payments 
     self.active_group_loan_memberships.each do |glm|
       GroupLoanDefaultPayment.create :group_loan_membership_id => glm.id
+    end
+  end
+  
+  def create_weekly_tasks
+    (1..loan_duration).each do |week_number|
+      GroupLoanWeeklyTask.create :week_number => week_number
+    end
+  end
+  
+  def create_weekly_responsibilities
+    self.group_loan_weekly_tasks.each do |weekly_task|
+      self.active_group_loan_memberships.order("id ASC").each do |glm|
+        GroupLoanWeeklyResponsibility.create :group_loan_membership_id => glm.id ,
+                                              :group_loan_weekly_task_id => weekly_task.id 
+      end
     end
   end
   
@@ -243,7 +259,9 @@ Phase: loan disbursement finalization
     self.deactivate_memberships_for_absentee_in_loan_disbursement
     
     self.execute_loan_disbursement_payment 
-    self.create_default_payments_for_active_members
+    self.create_default_payments 
+    self.create_weekly_tasks
+    self.create_weekly_responsibilities 
   end
   
 =begin

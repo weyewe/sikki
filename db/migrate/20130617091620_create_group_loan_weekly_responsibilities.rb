@@ -2,6 +2,7 @@ class CreateGroupLoanWeeklyResponsibilities < ActiveRecord::Migration
   def change
     create_table :group_loan_weekly_responsibilities do |t|
       t.integer :group_loan_membership_id 
+      t.integer :group_loan_weekly_task_id  
       
       t.integer :attendance_status , :default => GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:unmarked]  #options: PRESENT, Absent, Late
       t.text :attendance_note
@@ -10,7 +11,7 @@ class CreateGroupLoanWeeklyResponsibilities < ActiveRecord::Migration
       
       # paid: whether it is only savings or full payment will be deduced by has_clearance
       
-      t.integer :group_loan_weekly_task_id , :default => nil 
+      
       
       # clearance_source refers to the payment that cleared this week's responsibility 
       t.string :clearance_source_type , :default => nil 

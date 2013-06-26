@@ -1,5 +1,5 @@
 class GroupLoanWeeklyTask < ActiveRecord::Base
-  # attr_accessible :title, :body
+  attr_accessible :week_number 
   # week 1
   # week 2 
   # week 3 
@@ -12,6 +12,7 @@ class GroupLoanWeeklyTask < ActiveRecord::Base
   has_many :group_loan_weekly_payments 
   
   has_many :group_loan_independent_payments 
+  belongs_to :group_loan 
   
   
   def unconfirmed_independent_payments

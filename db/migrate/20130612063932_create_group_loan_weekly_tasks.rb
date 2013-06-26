@@ -16,10 +16,6 @@ class CreateGroupLoanWeeklyTasks < ActiveRecord::Migration
       
       # the amount of $ to be passed is correct
       t.decimal :total_amount_collected,  :precision => 12, :scale => 2 , :default => 0 
-      
-      
-      
-      
        
       
       t.timestamps

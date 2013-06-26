@@ -2,7 +2,7 @@
 # group_loan_weekly_task can be closed if every group_loan_weekly_responsibility has clearance
 
 class GroupLoanWeeklyResponsibility < ActiveRecord::Base
-  # attr_accessible :title, :body
+  attr_accessible :group_loan_membership_id, :group_loan_weekly_task_id
   belongs_to :group_loan_weekly_task
   has_one :group_loan_weekly_payment_id 
   
