@@ -71,13 +71,13 @@ class GroupLoanGracePayment < ActiveRecord::Base
      self.cash_amount + self.voluntary_savings_withdrawal_amount 
   end
   
-  def update_amount_paid_to_cover_outstanding_grace_payment
+  def update_amount_paid
     outstanding_grace_period = group_loan_membership.outstanding_grace_period_amount
     
     if total_payment > outstanding_grace_period
-      self.amount_paid_to_cover_outstanding_grace_payment = outstanding_grace_period
+      self.amount_paid = outstanding_grace_period
     else
-      self.amount_paid_to_cover_outstanding_grace_payment = total_payment
+      self.amount_paid = total_payment
     end
     
     self.save 
@@ -94,7 +94,7 @@ class GroupLoanGracePayment < ActiveRecord::Base
     new_object.cash_amount                         = BigDecimal(params[:cash_amount])
     
     if new_object.save
-      self.update_amount_paid_to_cover_outstanding_grace_payment
+      self.update_amount_paid
     end
     
     return new_object 
@@ -120,7 +120,7 @@ class GroupLoanGracePayment < ActiveRecord::Base
       SavingsEntry.create_group_loan_voluntary_savings_withdrawal( self,  self.voluntary_savings_withdrawal_amount )
     end
 
-    extra_payment = self.total_payment  - self.amount_paid_to_cover_outstanding_grace_payment 
+    extra_payment = self.total_payment  - self.amount_paid 
     
     if extra_payment > BigDecimal( '0' )
       SavingsEntry.create_group_loan_voluntary_savings_addition( self, extra_payment)

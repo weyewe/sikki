@@ -64,7 +64,7 @@ class GroupLoanMembership < ActiveRecord::Base
   def calculate_outstanding_grace_period_amount
     initial_outstanding_grace_period_amount = self.total_unpaid_backlogs * self.group_loan_product.grace_period_weekly_payment_amount
     
-    paid_amount = self.group_loan_grace_period_payments.where(:is_confirmed => true).sum("amount_paid_to_cover_outstanding_grace_payment")   
+    paid_amount = self.group_loan_grace_period_payments.where(:is_confirmed => true).sum("amount_paid")   
     
     self.outstanding_grace_period_amount = initial_outstanding_grace_period_amount - paid_amount
     self.save
