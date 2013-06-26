@@ -10,6 +10,9 @@ class CreateGroupLoanGracePayments < ActiveRecord::Migration
       
       t.decimal :default_payment_amount , :default        => 0,  :precision => 9, :scale => 2
       
+      # => amount_paid => refers to the amount of payment in grace payment used to pay outstanding grace payment
+      t.decimal :amount_paid  , :default        => 0,  :precision => 9, :scale => 2
+      
       
       t.boolean :is_confirmed, :default => false 
       t.datetime :confirmation_datetime  # automated 

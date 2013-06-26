@@ -1,0 +1,13 @@
+Create the update case for:  (CONFIRMATION)
+1. GroupLoanWeeklyPayment
+2. GroupLoanIndependentPayment
+3. GroupLoanGracePayment 
+
+in the validation, perform	a branch: self.is_persisted?  < means that it is an update 
+
+
+Create the update case for: (pre_confirm update)
+Create the update case for: (post_confirm_update)
+
+for example: post confirm => values run against during validation has changed.
+						in the group_loan_grace_payment => 

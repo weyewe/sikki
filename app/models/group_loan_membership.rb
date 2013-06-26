@@ -46,7 +46,6 @@ class GroupLoanMembership < ActiveRecord::Base
     self.destroy 
   end
   
-  
   def mark_financial_education_attendance( params )
     if self.group_loan.is_financial_education_finalized? 
       errors.add(:is_attending_financial_education, "Tidak bisa edit. Pendidikan keuangan sudah difinalisasi")
@@ -57,19 +56,15 @@ class GroupLoanMembership < ActiveRecord::Base
     self.save 
   end
   
-  def backlogs
-    self.group_loan_backlogs.where(:is_paid => false)
-  end
-  
-  def total_backlogs
-    backlogs.count 
+   
+  def total_unpaid_backlogs
+    unpaid_backlogs.count 
   end
   
   def calculate_outstanding_grace_period_amount
-    initial_outstanding_grace_period_amount = self.total_backlogs * self.group_loan_product.grace_period_weekly_payment_amount
+    initial_outstanding_grace_period_amount = self.total_unpaid_backlogs * self.group_loan_product.grace_period_weekly_payment_amount
     
-    paid_amount = self.group_loan_grace_period_payments.sum("default_payment_amount")   
-    #paid amount can't exceed the initial_outstanding. If it exceeds, port to voluntary savings 
+    paid_amount = self.group_loan_grace_period_payments.where(:is_confirmed => true).sum("amount_paid_to_cover_outstanding_grace_payment")   
     
     self.outstanding_grace_period_amount = initial_outstanding_grace_period_amount - paid_amount
     self.save
@@ -83,17 +78,13 @@ class GroupLoanMembership < ActiveRecord::Base
     self.remaining_weeks.count 
   end
   
-   
-  
   def unpaid_backlogs
     self.group_loan_backlogs.where(:is_paid => false ) 
   end
   
-  
   def has_cleared_weekly_payment?(group_loan_weekly_task)
     self.remaining_weeks.where(:group_loan_weekly_task_id => group_loan_weekly_task.id ).count == 0 
   end
-   
   
 =begin
   Entering the grace period
@@ -110,10 +101,7 @@ class GroupLoanMembership < ActiveRecord::Base
     default_payment.voluntary_savings_deduction_amount = BigDecimal("0")
     default_payment.amount_to_be_shared_with_non_defaultee = BigDecimal("0")
     
-    
-    
     total_amount = default_payment.outstanding_grace_period_amount 
-    
     
     if total_amount <= total_compulsory_savings
       default_payment.compulsory_savings_deduction_amount = total_amount 
@@ -153,7 +141,4 @@ class GroupLoanMembership < ActiveRecord::Base
     self.update_total_voluntary_savings # re-sum all transactions 
     self.member.update_total_savings_account # fuck.. use the buffered state 
   end
-  
-  
-  
 end
