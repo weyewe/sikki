@@ -7,6 +7,7 @@ class GroupLoan < ActiveRecord::Base
   
   has_many :savings_entries, :as => :financial_product 
   has_many :group_loan_backlogs
+  has_many :group_loan_grace_payments 
   
   
   has_many :group_loan_weekly_tasks # weekly payment, weekly attendance  
@@ -340,7 +341,7 @@ Phase: loan disbursement finalization
       return self
     end
     
-    if self.group_loan_weekly_tasks.where(:is_closed =>true).count != self.loan_duration
+    if self.group_loan_weekly_tasks.where(:is_confirmed =>true).count != self.loan_duration
       errors.add(:generic_errors, "Ada Pembayaran mingguan yang belum di tutup")
       return self
     end

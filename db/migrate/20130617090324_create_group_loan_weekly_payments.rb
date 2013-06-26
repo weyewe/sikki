@@ -6,7 +6,7 @@ class CreateGroupLoanWeeklyPayments < ActiveRecord::Migration
       t.integer :group_loan_membership_id          
       t.integer :group_loan_id 
         
-      t.integer :number_of_backlogs                  
+                 
       t.boolean :is_paying_current_week              , :default => true 
       t.boolean :is_only_savings                      , :default => false         
       t.boolean :is_no_payment                        , :default => false 
@@ -20,7 +20,9 @@ class CreateGroupLoanWeeklyPayments < ActiveRecord::Migration
       t.decimal :voluntary_savings_withdrawal_amount , :default        => 0,  :precision => 9, :scale => 2
       t.decimal :cash_amount , :default        => 0,  :precision => 9, :scale => 2
             
-      t.integer :number_of_future_weeks                    
+                          
+      t.integer :number_of_backlogs       
+      t.integer :number_of_future_weeks
       
       
       t.boolean :is_confirmed, :default => false 

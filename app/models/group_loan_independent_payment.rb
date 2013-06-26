@@ -151,19 +151,24 @@ class GroupLoanIndependentPayment < ActiveRecord::Base
   
   def create_savings_entries
     number_of_weeks_paid = self.total_weeks_paid
-    
-      
-     #compulsory savings, from mandatory weekly payment 
-     (1..number_of_weeks_paid).each do |x|
-       SavingsEntry.create_group_loan_compulsory_savings_addition( self,  group_loan_membership.group_loan_product.min_savings)
-     end
 
-     #voluntary savings 
-     extra_payment = self.cash_amount + self.voluntary_savings_withdrawal_amount  -  base_payment_amount
-     if extra_payment > BigDecimal( '0' )
-       SavingsEntry.create_group_loan_voluntary_savings_addition( self, extra_payment)
-     end
-     
+
+    if voluntary_savings_withdrawal_amount > BigDecimal('0')
+      SavingsEntry.create_group_loan_voluntary_savings_withdrawal( self,  self.voluntary_savings_withdrawal_amount )
+    end
+
+
+    #compulsory savings, from mandatory weekly payment 
+    (1..number_of_weeks_paid).each do |x|
+      SavingsEntry.create_group_loan_compulsory_savings_addition( self,  group_loan_membership.group_loan_product.min_savings)
+    end
+
+    #voluntary savings 
+    extra_payment = self.cash_amount + self.voluntary_savings_withdrawal_amount  -  base_payment_amount
+    if extra_payment > BigDecimal( '0' )
+      SavingsEntry.create_group_loan_voluntary_savings_addition( self, extra_payment)
+    end
+
   end
   
   
@@ -171,10 +176,23 @@ class GroupLoanIndependentPayment < ActiveRecord::Base
   def confirm
     return if self.is_confirmed? 
     
+    self.is_confirmed = true 
+    self.confirmation_datetime = DateTime.now 
+    self.save 
+    
     new_object.update_affected_weekly_responsibilities 
     new_object.create_transaction_activities
     new_object.create_savings_entries
+    
   end
+  
+  def delete_object
+    return nil if is_confirmed? 
+    
+    self.destroy 
+  end
+  
+  
   
   
 end

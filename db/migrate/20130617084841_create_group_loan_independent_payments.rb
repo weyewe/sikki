@@ -15,10 +15,12 @@ class CreateGroupLoanIndependentPayments < ActiveRecord::Migration
       t.boolean :is_confirmed, :default => false 
       t.datetime :confirmation_datetime 
       
+      t.datetime :collection_datetime
       t.integer :employee_id # the collector of independent payment 
       
       t.integer :group_loan_id 
       t.integer :group_loan_membership_id 
+      
       
 
       t.timestamps

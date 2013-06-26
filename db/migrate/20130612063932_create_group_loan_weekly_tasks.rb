@@ -5,22 +5,21 @@ class CreateGroupLoanWeeklyTasks < ActiveRecord::Migration
       t.integer :group_loan_id 
       t.integer :week_number 
       
-      t.boolean :is_closed, :default => false  
+      t.datetime :collection_datetime
+      t.integer :employee_id   # the one responsible for extracting weekly payment
       
-      t.date :collection_date 
-      t.time :collection_time_start 
-      t.time :collection_time_end
+      
+      t.boolean :is_confirmed, :default => false 
+      t.datetime :confirmation_datetime
+      
+     
       
       # the amount of $ to be passed is correct
       t.decimal :total_amount_collected,  :precision => 12, :scale => 2 , :default => 0 
       
-      t.boolean :is_confirmed, :default => false 
       
-      t.datetime :confirmation_datetime
       
-      t.datetime :meeting_datetime
       
-      t.integer :employee_id   # the one responsible for extracting weekly payment 
        
       
       t.timestamps
