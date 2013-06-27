@@ -15,6 +15,7 @@ class GroupLoanMembership < ActiveRecord::Base
   has_many :group_loan_independent_payments
   has_many :group_loan_grace_payments
   has_many :group_loan_weekly_responsibilities
+  has_many :group_loan_voluntary_savings_withdrawals 
   
   has_many :group_loan_backlogs 
   

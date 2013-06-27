@@ -180,9 +180,9 @@ class GroupLoanIndependentPayment < ActiveRecord::Base
     self.confirmation_datetime = DateTime.now 
     self.save 
     
-    new_object.update_affected_weekly_responsibilities 
-    new_object.create_transaction_activities
-    new_object.create_savings_entries
+    self.update_affected_weekly_responsibilities 
+    self.create_transaction_activities
+    self.create_savings_entries
     
   end
   
