@@ -162,9 +162,49 @@ class GroupLoanMembership < ActiveRecord::Base
                                           :amount =>  self.closing_savings_amount
     end
     
-    # self.update_total_voluntary_savings # re-sum all transactions   # do we need to do it?
+    self.update_total_voluntary_savings # re-sum all transactions   # do we need to do it?
     # it can always be re constructed.. just exclude the GroupLoanPortVoluntarySavings 
     # anyway, this is expired => as a data.. to show the history of group loan membership
     self.member.update_total_savings_account # fuck.. use the buffered state 
+  end
+  
+  
+  def update_total_compulsory_savings
+    incoming = member.savings_entries.where(
+      :savings_status => SAVINGS_STATUS[:group_loan_compulsory_savings],
+      :financial_product_type => GroupLoan.to_s, 
+      :financial_product_id => self.group_loan_id ,
+      :direction => FUND_DIRECTION[:incoming]
+    ).sum("amount")   
+    
+    outgoing = member.savings_entries.where(
+      :savings_status => SAVINGS_STATUS[:group_loan_compulsory_savings],
+      :financial_product_type => GroupLoan.to_s, 
+      :financial_product_id => self.group_loan_id ,
+      :direction => FUND_DIRECTION[:outgoing]
+    ).sum("amount")
+    
+    self.total_compulsory_savings = incoming - outgoing 
+    self.save 
+    
+  end
+  
+  def update_total_voluntary_savings 
+    incoming = member.savings_entries.where(
+      :savings_status => SAVINGS_STATUS[:group_loan_voluntary_savings],
+      :financial_product_type => GroupLoan.to_s, 
+      :financial_product_id => self.group_loan_id ,
+      :direction => FUND_DIRECTION[:incoming]
+    ).sum("amount")   
+    
+    outgoing = member.savings_entries.where(
+      :savings_status => SAVINGS_STATUS[:group_loan_voluntary_savings],
+      :financial_product_type => GroupLoan.to_s, 
+      :financial_product_id => self.group_loan_id ,
+      :direction => FUND_DIRECTION[:outgoing]
+    ).sum("amount")
+    
+    self.total_voluntary_savings = incoming - outgoing 
+    self.save
   end
 end

@@ -13,10 +13,13 @@ class GroupLoanPortVoluntarySavings < ActiveRecord::Base
   
   def create_savings_entries
     # withdrawing the compulsory savings
+    
+    total_voluntary_savings = self.group_loan_membership.total_voluntary_savings
+    
     SavingsEntry.create :savings_source_id => self.id,
                         :savings_source_type => self.class.to_s,
-                        :amount => self.group_loan_membership.total_compulsory_savings ,
-                        :savings_status => SAVINGS_STATUS[:group_loan_compulsory_savings],
+                        :amount => total_voluntary_savings ,
+                        :savings_status => SAVINGS_STATUS[:group_loan_voluntary_savings],
                         :direction => FUND_DIRECTION[:outgoing],
                         :financial_product_id => self.group_loan_membership.group_loan_id ,
                         :financial_product_type => self.group_loan_membership.group_loan.class.to_s
@@ -24,8 +27,8 @@ class GroupLoanPortVoluntarySavings < ActiveRecord::Base
     # adding the savings at the voluntary savings
     SavingsEntry.create :savings_source_id => self.id,
                         :savings_source_type => self.class.to_s,
-                        :amount =>self.group_loan_membership.total_compulsory_savings,
-                        :savings_status => SAVINGS_STATUS[:group_loan_voluntary_savings],
+                        :amount => total_voluntary_savings,
+                        :savings_status => SAVINGS_STATUS[:savings_account],
                         :direction => FUND_DIRECTION[:incoming],
                         :financial_product_id => self.group_loan_membership.group_loan_id ,
                         :financial_product_type => self.group_loan_membership.group_loan.class.to_s 

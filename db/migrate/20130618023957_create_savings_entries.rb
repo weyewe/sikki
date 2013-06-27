@@ -10,6 +10,8 @@ class CreateSavingsEntries < ActiveRecord::Migration
       t.integer :financial_product_id
       t.string :financial_product_type 
       
+      t.integer :member_id 
+      
 
       t.timestamps
     end
