@@ -16,21 +16,7 @@ class GroupLoanPortVoluntarySavings < ActiveRecord::Base
     
     total_voluntary_savings = self.group_loan_membership.total_voluntary_savings
     
-    SavingsEntry.create :savings_source_id => self.id,
-                        :savings_source_type => self.class.to_s,
-                        :amount => total_voluntary_savings ,
-                        :savings_status => SAVINGS_STATUS[:group_loan_voluntary_savings],
-                        :direction => FUND_DIRECTION[:outgoing],
-                        :financial_product_id => self.group_loan_membership.group_loan_id ,
-                        :financial_product_type => self.group_loan_membership.group_loan.class.to_s
-                        
-    # adding the savings at the voluntary savings
-    SavingsEntry.create :savings_source_id => self.id,
-                        :savings_source_type => self.class.to_s,
-                        :amount => total_voluntary_savings,
-                        :savings_status => SAVINGS_STATUS[:savings_account],
-                        :direction => FUND_DIRECTION[:incoming],
-                        :financial_product_id => self.group_loan_membership.group_loan_id ,
-                        :financial_product_type => self.group_loan_membership.group_loan.class.to_s 
+    SavingsEntry.create_group_loan_voluntary_savings_withdrawal( self, total_voluntary_savings)     
+    SavingsEntry.create_savings_account_addition( self, total_voluntary_savings)        
   end
 end

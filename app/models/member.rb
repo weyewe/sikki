@@ -6,9 +6,29 @@ class Member < ActiveRecord::Base
   has_many :group_loan_memberhips 
   
   has_many :saving_entries 
-  
   has_many :savings_account_payments 
   
+  def self.create_object(params)
+    new_object = self.new
+    new_object.name = params[:name]
+    new_object.address = params[:address]
+    new_object.office_id = params[:office_id]
+    
+    new_object.save
+    
+    return new_object 
+  end
+  
+  def update_object(params)
+    self.name    = params[:name]
+    self.address = params[:address]
+    
+    self.save 
+  end
+  
+=begin
+  Savings Related 
+=end
   def update_total_savings_account
     incoming = member.savings_entries.where(
       :savings_status => SAVINGS_STATUS[:savings_account],

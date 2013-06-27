@@ -32,26 +32,34 @@ class GroupLoanDisbursement < ActiveRecord::Base
     # company disbursed the $$$
     # member pays the admin fee
     # member pays the initial_compulsory_savings 
+    
+    member = group_loan_membership.member 
     TransactionActivity.create :transaction_source_id => self.id, 
                               :transaction_source_type => self.class.to_s,
                               :cash => group_loan_membership.group_loan_product.disbursed_principal ,
                               :cash_direction => FUND_DIRECTION[:outgoing],
                               :savings_direction => FUND_DIRECTION[:incoming]
-                              :savings => BigDecimal('0')
+                              :savings => BigDecimal('0'),
+                              :member_id => member.id, 
+                              :office_id => member.office_id 
     
     TransactionActivity.create :transaction_source_id => self.id, 
                               :transaction_source_type => self.class.to_s,
                               :cash => group_loan_membership.group_loan_product.admin_fee   ,
                               :cash_direction => FUND_DIRECTION[:incoming],
                               :savings_direction => FUND_DIRECTION[:incoming]
-                              :savings => BigDecimal('0')
+                              :savings => BigDecimal('0'),
+                              :member_id => member.id, 
+                              :office_id => member.office_id
                               
     TransactionActivity.create :transaction_source_id => self.id, 
                               :transaction_source_type => self.class.to_s,
                               :cash => group_loan_membership.group_loan_product.initial_savings   ,
                               :cash_direction => FUND_DIRECTION[:incoming],
                               :savings_direction => FUND_DIRECTION[:incoming]
-                              :savings => BigDecimal('0')
+                              :savings => BigDecimal('0'),
+                              :member_id => member.id, 
+                              :office_id => member.office_id
   end
   
   def create_initial_compulsory_savings 

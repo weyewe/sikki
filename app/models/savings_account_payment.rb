@@ -52,12 +52,16 @@ class SavingsAccountPayment < ActiveRecord::Base
   
   
   def create_transaction_activities
+    member = group_loan_membership.member 
+    
     TransactionActivity.create :transaction_source_id => self.id, 
                               :transaction_source_type => self.class.to_s,
                               :cash =>  self.amount ,
                               :cash_direction => FUND_DIRECTION[:incoming], # doesn't matter
                               :savings =>  BigDecimal('0'),
-                              :savings_direction => FUND_DIRECTION[:outgoing]
+                              :savings_direction => FUND_DIRECTION[:outgoing],
+                              :member_id => member.id, 
+                              :office_id => member.office_id
                               
   end
   
