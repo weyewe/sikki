@@ -139,14 +139,32 @@ class GroupLoanMembership < ActiveRecord::Base
     self.update_total_voluntary_savings
   end
   
-  def port_voluntary_savings_to_savings_account
-    GroupLoanVoluntarySavingsWithdrawal.create  :group_loan_membership_id => self.id , 
-                                                :amount => self.closing_withdrawal_amount
-                                                
-    GroupLoanPortVoluntarySavings.create :group_loan_membership_id => self.id , 
-                                          :amount => self.closing_savings_amount
+  
+  def assign_closing_withdrawal_amount(amount)
+    if amount > total_voluntary_savings
+      self.errors.add(:closing_withdrawal_amount, "Penarikan tidak boleh lebih dari #{total_voluntary_savings}")
+      return self
+    end
     
-    self.update_total_voluntary_savings # re-sum all transactions 
+    self.closing_withdrawal_amount  = amount
+    self.closing_savings_amount = total_voluntary_savings - amount
+    self.save 
+  end
+  
+  def port_voluntary_savings_to_savings_account
+    if self.closing_withdrawal_amount != BigDecimal('0')
+      GroupLoanVoluntarySavingsWithdrawal.create  :group_loan_membership_id => self.id , 
+                                                :amount => self.closing_withdrawal_amount
+    end                                            
+                                                
+    if self.closing_savings_amount != BigDecimal('0')
+      GroupLoanPortVoluntarySavings.create :group_loan_membership_id => self.id , 
+                                          :amount =>  self.closing_savings_amount
+    end
+    
+    # self.update_total_voluntary_savings # re-sum all transactions   # do we need to do it?
+    # it can always be re constructed.. just exclude the GroupLoanPortVoluntarySavings 
+    # anyway, this is expired => as a data.. to show the history of group loan membership
     self.member.update_total_savings_account # fuck.. use the buffered state 
   end
 end
