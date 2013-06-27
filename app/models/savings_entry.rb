@@ -96,7 +96,7 @@ class SavingsEntry < ActiveRecord::Base
     
     self.create :savings_source_id => savings_source.id,
                         :savings_source_type => savings_source.class.to_s,
-                        :amount => savings_source.group_loan_membership.group_loan_product.min_savings ,
+                        :amount => amount  ,
                         :savings_status => SAVINGS_STATUS[:group_loan_compulsory_savings],
                         :direction => FUND_DIRECTION[:outgoing],
                         :financial_product_id => savings_source.group_loan_id ,
@@ -109,5 +109,35 @@ class SavingsEntry < ActiveRecord::Base
 =begin
   Savings Account related savings : savings withdrawal and savings addition and interest (4% annual), given monthly 
 =end
+
+  def self.create_savings_account_addition( savings_source, amount ) 
+    member = savings_source.member
+    
+    self.create :savings_source_id => savings_source.id,
+                        :savings_source_type => savings_source.class.to_s,
+                        :amount => amount  ,
+                        :savings_status => SAVINGS_STATUS[:savings_account],
+                        :direction => FUND_DIRECTION[:incoming],
+                        :financial_product_id =>  nil ,
+                        :financial_product_type => nil ,
+                        :member_id => member.id
+  
+    member.update_total_savings_account
+  end
+  
+  def self.create_savings_account_withdrawal( savings_source, amount ) 
+    member = savings_source.member
+    
+    self.create :savings_source_id => savings_source.id,
+                        :savings_source_type => savings_source.class.to_s,
+                        :amount => amount  ,
+                        :savings_status => SAVINGS_STATUS[:savings_account],
+                        :direction => FUND_DIRECTION[:outgoing],
+                        :financial_product_id =>  nil ,
+                        :financial_product_type => nil ,
+                        :member_id => member.id
+  
+    member.update_total_savings_account
+  end
                       
 end

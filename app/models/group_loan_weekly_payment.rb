@@ -304,13 +304,17 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     new_object.voluntary_savings_withdrawal_amount = BigDecimal(params[:voluntary_savings_withdrawal_amount])
     new_object.cash_amount                         = BigDecimal(params[:cash_amount])
 
-
- 
     new_object.save 
+    
     return new_object 
   end
   
   def update_object(params) 
+    if self.is_confirmed? 
+      self.errors.add(:generic_errors, "Sudah terkonfirmasi")
+      return self 
+    end
+    
     # update pre-confirm
     # update post-confirm 
   end

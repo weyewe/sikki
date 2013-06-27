@@ -16,11 +16,7 @@ GROUP_LOAN_DEACTIVATION_STATUS = {
   :loan_disbursement_absent => 2 ,
   :finished_group_loan => 3 
 }
-
-GROUP_LOAN_VOLUNTARY_SAVINGS_WITHDRAWAL_CASE = {
-  :normal => 1 , 
-  :loan_closing => 2 
-}
+ 
 
 FUND_DIRECTION = {
   :incoming => 1,

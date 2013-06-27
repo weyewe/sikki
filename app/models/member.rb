@@ -7,6 +7,8 @@ class Member < ActiveRecord::Base
   
   has_many :saving_entries 
   
+  has_many :savings_account_payments 
+  
   def update_total_savings_account
     incoming = member.savings_entries.where(
       :savings_status => SAVINGS_STATUS[:savings_account],

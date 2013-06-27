@@ -76,8 +76,6 @@ class GroupLoanVoluntarySavingsWithdrawal < ActiveRecord::Base
                               
   end
   
-  
-  
   def create_savings_entries
     SavingsEntry.create_group_loan_voluntary_savings_withdrawal( self,  self.amount )
   end
