@@ -137,7 +137,11 @@ class GroupLoanGracePayment < ActiveRecord::Base
     
     new_object.create_transaction_activities
     new_object.create_savings_entries # using the old outstanding grace period amount 
-    new_object.group_loan_membership.calculate_outstanding_grace_period_amount
+    glm = new_object.group_loan_membership
+    glm.calculate_outstanding_grace_period_amount
+    glm.reload
+    glm.update_defaultee_status 
+    
   end
   
   def delete_object

@@ -11,8 +11,13 @@ class CreateGroupLoanDefaultPayments < ActiveRecord::Migration
       t.decimal :amount_sub_group_share, :precision => 10, :scale => 2 , :default => 0 
       t.decimal :amount_group_share,  :precision => 10, :scale => 2 , :default => 0 
       
+      # these compulsory_savings_deduction and voluntary_savings_deduction represent
+      # the standard_default_resolution 
       t.decimal :compulsory_savings_deduction_amount,  :precision => 10, :scale => 2 , :default => 0 
       t.decimal :voluntary_savings_deduction_amount,  :precision => 10, :scale => 2 , :default => 0 
+      
+      t.decimal :custom_compulsory_savings_deduction_amount,  :precision => 10, :scale => 2 , :default => 0 
+      t.decimal :custom_voluntary_savings_deduction_amount,  :precision => 10, :scale => 2 , :default => 0
       # voluntary savings can only be deducted on custom default resolution 
       
       

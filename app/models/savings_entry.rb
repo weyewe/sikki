@@ -73,6 +73,19 @@ class SavingsEntry < ActiveRecord::Base
     group_loan_membership.update_total_compulsory_savings
   end
   
+  def self.create_group_loan_compulsory_savings_withdrawal( savings_source, amount ) 
+    self.create :savings_source_id => savings_source.id,
+                        :savings_source_type => savings_source.class.to_s,
+                        :amount => savings_source.group_loan_membership.group_loan_product.min_savings ,
+                        :savings_status => SAVINGS_STATUS[:group_loan_compulsory_savings],
+                        :direction => FUND_DIRECTION[:outgoing],
+                        :financial_product_id => savings_source.group_loan_id ,
+                        :financial_product_type => savings_source.group_loan.class.to_s
+  
+    group_loan_membership = savings_source.group_loan_membership
+    group_loan_membership.update_total_compulsory_savings
+  end
+  
 =begin
   Savings Account related savings : savings withdrawal and savings addition and interest (4% annual), given monthly 
 =end

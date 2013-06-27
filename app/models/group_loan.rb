@@ -4,6 +4,7 @@ class GroupLoan < ActiveRecord::Base
   has_many :members, :through => :group_loan_memberships 
   has_many :group_loan_memberships 
   has_many :sub_group_loans 
+  has_one :group_loan_default_payment 
   
   has_many :savings_entries, :as => :financial_product 
   has_many :group_loan_backlogs
@@ -318,7 +319,7 @@ Phase: loan disbursement finalization
   #rounding up
   def update_total_amount_in_default_payment
     self.active_group_loan_memberships.includes(:default_payment).each do |glm|
-      default_payment = glm.default_payment 
+      default_payment = glm.group_loan_default_payment 
       total_amount = BigDecimal("0")
       member = glm.member
       total_savings = member.saving_book.total
@@ -387,6 +388,15 @@ Phase: loan disbursement finalization
   # end
 
 
+  def update_total_default_amount
+    amount  = BigDecimal('0')
+    self.active_group_loan_memberships.joins(:group_loan_default_payment).each do |glm|
+      amount += glm.group_loan_default_payment.standard_resolution_amount
+    end
+    self.total_default_amount = amount 
+    self.save 
+  end
+
   def finalize_grace_payment_period
      if not self.is_grace_payment_period_phase?  
        errors.add(:generic_errors, "Bukan di fase penyerahan grace period payment")
@@ -400,15 +410,26 @@ Phase: loan disbursement finalization
      
      self.is_grace_payment_period_closed = true
      self.save 
-     # last update 
      self.calculate_default_resolution_amount 
+     self.reload 
+     self.update_total_default_amount
   end
  
 =begin
  Default Resolution
  Business Constraint: the members want the savings to be returned fast. 
+ Solution: ??
 =end
-
+  def total_custom_default_resolution_amount
+    amount  = BigDecimal('0')
+    self.active_group_loan_memberships.joins(:group_loan_default_payment).each do |glm|
+      amount += glm.group_loan_default_payment.custom_resolution_amount
+    end
+    
+    amount 
+  end
+  
+  
   def valid_custom_payment_amount?
     self.total_default_amount <= self.total_custom_default_resolution_amount 
   end
@@ -416,7 +437,7 @@ Phase: loan disbursement finalization
   def execute_default_resolution
     if self.default_payment_resolution_case == GROUP_LOAN_DEFAULT_PAYMENT_CASE[:standard]
       self.active_group_loan_memberships.each do |glm|
-        glm.default_payment.execute_standard_payment 
+        glm.group_loan_default_payment.execute_standard_payment 
       end
     elsif self.default_payment_resolution_case == GROUP_LOAN_DEFAULT_PAYMENT_CASE[:custom]
 
@@ -425,9 +446,8 @@ Phase: loan disbursement finalization
         return self
       end
       
-      
       self.active_group_loan_memberships.each do |glm|
-        glm.default_payment.execute_custom_payment 
+        glm.group_loan_default_payment.execute_custom_payment 
       end
     end
   end
@@ -498,11 +518,4 @@ Phase: loan disbursement finalization
     self.port_voluntary_savings_to_savings_account # withdraw the remaining 
     self.deactivate_group_loan_memberships_on_group_loan_closing
   end
-  
-   
-  
-  
-  
-  
-  
 end

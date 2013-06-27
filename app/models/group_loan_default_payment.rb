@@ -64,4 +64,54 @@ class GroupLoanDefaultPayment < ActiveRecord::Base
     self.save 
   end
   
+  
+  
+  
+  def assign_custom_resolution_amount( amount ) 
+    if self.is_defaultee?
+      total_group_loan_savings = group_loan_membership.total_compulsory_savings + group_loan_membership.total_voluntary_savings
+      if custom_resolution_amount > total_group_loan_savings
+        self.errors.add(:custom_resolution_amount, "Tidak boleh lebih besar dari tabungan: #{total_group_loan_savings}")
+        return self
+      end
+      
+      if custom_resolution_amount > compulsory_savings_deduction_amount
+        self.custom_compulsory_savings_deduction_amount = compulsory_savings_deduction_amount
+        self.custom_voluntary_savings_deduction_amount = custom_resolution_amount - compulsory_savings_deduction_amount
+        self.save 
+      else
+        self.custom_compulsory_savings_deduction_amount = custom_resolution_amount
+        self.custom_voluntary_savings_deduction_amount = BigDecimal('0')
+        self.save
+      end
+    else
+      if custom_resolution_amount > compulsory_savings_deduction_amount
+        self.errors.add(:custom_resolution_amount, "Tidak boleh lebih besar dari tabungan wajib: #{compulsory_savings_deduction_amount}")
+        return self 
+      else
+        self.custom_compulsory_savings_deduction_amount = custom_resolution_amount
+        self.custom_voluntary_savings_deduction_amount = BigDecimal('0')
+        self.save
+      end
+    end
+  end
+  
+  
+  def execute_standard_payment 
+    SavingsEntry.create_group_loan_compulsory_savings_withdrawal( self, self.compulsory_savings_deduction_amount ) 
+    
+    # if it is non_defaultee, the voluntary_savings_deduction_amount will be 0 
+    if self.voluntary_savings_deduction_amount > BigDecimal('0')
+      SavingsEntry.create_group_loan_voluntary_savings_withdrawal( self, self.voluntary_savings_deduction_amount ) 
+    end
+  end
+  
+  def execute_custom_payment
+    SavingsEntry.create_group_loan_compulsory_savings_withdrawal( self, self.custom_compulsory_savings_deduction_amount ) 
+    
+    # if it is non_defaultee, the voluntary_savings_deduction_amount will be 0 
+    if self.custom_voluntary_savings_deduction_amount > BigDecimal('0')
+      SavingsEntry.create_group_loan_voluntary_savings_withdrawal( self, self.custom_voluntary_savings_deduction_amount ) 
+    end
+  end
 end
