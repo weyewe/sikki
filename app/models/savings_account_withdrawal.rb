@@ -54,7 +54,7 @@ class SavingsAccountWithdrawal < ActiveRecord::Base
     member = group_loan_membership.member 
     TransactionActivity.create :transaction_source_id => self.id, 
                               :transaction_source_type => self.class.to_s,
-                              :cash =>    ,
+                              :cash =>   BigDecimal('0') ,
                               :cash_direction => FUND_DIRECTION[:incoming], # doesn't matter
                               :savings =>   self.amount ,
                               :savings_direction => FUND_DIRECTION[:outgoing],

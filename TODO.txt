@@ -11,3 +11,28 @@ Create the update case for: (post_confirm_update)
 
 for example: post confirm => values run against during validation has changed.
 						in the group_loan_grace_payment => 
+						
+						
+						
+RSPEC
+1. Create Office
+2. Create Member
+3. Create Employee
+4. Create GroupLoanProduct
+5. Create GroupLoan 
+6. Create SubGroupLoan 
+
+6. Create GroupLoanMembership  + SubGroupLoan Assignment   + Select Group Leader + Select SubGroup Leader
+7. Create GroupLoanSubcription 
+
+9. Run the Group Loan
+	1. Mark Financial Education Attendance
+	2. Mark Loan Disbursement Attendance 
+	3. Run the WeeklyPayment Period: GroupLoanWeeklyPayment + GroupLoanIndependentPayment 
+	4. Close the WeeklyPaymentPeriod 
+	5. Run the Grace Period : GroupLoanGracePeriodPayment 
+	6. Close the GracePeriod 
+	7. Run the DefaultResolution: Standard or Custom  (If custom, create the assign group loan)
+	8. Add the amount of voluntary savings to be ported to savings account
+	9. Close group loan 
+	

@@ -20,14 +20,14 @@ class GroupLoan < ActiveRecord::Base
   validates_uniqueness_of :name 
   
   
-  def self.create_object( office, params)
+  def self.create_object(  params)
     new_object = self.new
-    new_object.office_id = office.id 
     
+    new_object.office_id = params[:office_id ]
     new_object.name                            = params[:name]
     new_object.is_auto_deduct_admin_fee        = true # params[:is_auto_deduct_admin_fee]
     new_object.is_auto_deduct_initial_savings  = true # params[:is_auto_deduct_initial_savings]
-    new_object.is_compulsory_weekly_attendance = params[:is_compulsory_weekly_attendance]
+    new_object.is_compulsory_weekly_attendance = true 
     
     new_object.save
     
@@ -40,7 +40,7 @@ class GroupLoan < ActiveRecord::Base
     self.name                            = params[:name]
     self.is_auto_deduct_admin_fee        = true #params[:is_auto_deduct_admin_fee]
     self.is_auto_deduct_initial_savings  = true #params[:is_auto_deduct_initial_savings]
-    self.is_compulsory_weekly_attendance = params[:is_compulsory_weekly_attendance]
+    self.is_compulsory_weekly_attendance = true 
     
     self.save
     
@@ -48,8 +48,26 @@ class GroupLoan < ActiveRecord::Base
   end
   
   
+  def has_membership?( group_loan_membership)
+    active_glm_id_list = self.active_group_loan_memberships.map {|x| x.id }
+    
+    active_glm_id_list.include?( group_loan_membership.id )
+  end
+  
+  def set_group_leader( group_loan_membership ) 
+    self.errors.add(:group_leader_id, "Harap pilih anggota dari group ini") if group_loan_membership.nil? 
+    
+     
+    if self.has_membership?( group_loan_membership )  
+      self.group_leader_id = group_loan_membership.id 
+      self.save 
+    else
+      self.errors.add(:group_leader_id, "Bukan anggota dari pinjaman group ini")
+    end
+  end
+  
   def active_group_loan_memberships
-    if group_loan.is_closed?
+    if not self.is_closed?
       return self.group_loan_memberships.where(:is_active => true )
     else
       return self.group_loan_memberships.where{
@@ -62,12 +80,13 @@ class GroupLoan < ActiveRecord::Base
    
   def all_group_loan_memberships_have_equal_duration?
     duration_array = [] 
-    self.group_loan_memberships.each do |glm|
+    self.active_group_loan_memberships.each do |glm|
       return false if glm.group_loan_product.nil?
       duration_array << glm.group_loan_product.total_weeks 
     end
     
     return false if duration_array.uniq.length != 1
+    return true 
   end
   
 =begin
@@ -139,12 +158,13 @@ class GroupLoan < ActiveRecord::Base
   Switching phases 
 =end
   def start
+     
     if  self.is_started?
       errors.add(:generic_errors, "Pinjaman grup sudah dimulai")
       return self 
     end
     
-    if self.group_loan_memberhips.count == 0 
+    if self.group_loan_memberships.count == 0 
       errors.add(:generic_errors, "Jumlah anggota harus lebih besar dari 0")
       return self 
     end

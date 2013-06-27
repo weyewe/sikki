@@ -30,6 +30,16 @@ class SubGroupLoan < ActiveRecord::Base
     self.destroy 
   end
   
+  
+  def set_sub_group_leader( group_loan_membership ) 
+    if self.active_group_loan_memberships.collect {|x| x.id}.include?(group_loan_membership.id )
+      self.sub_group_leader_id = group_loan_membership.id 
+      self.save 
+    else
+      self.errors.add(:sub_group_leader_id, "Bukan anggota dari pinjaman group ini")
+    end
+  end
+  
   def active_group_loan_memberships 
     self.group_loan_memberships.where(:is_active => true )
   end

@@ -4,7 +4,7 @@ class CreateMembers < ActiveRecord::Migration
       
       t.string :name 
       t.text :address 
-      
+      t.integer :office_id 
       
       t.decimal :total_savings_account , :default        => 0,  :precision => 12, :scale => 2
 

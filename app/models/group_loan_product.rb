@@ -26,7 +26,7 @@ class GroupLoanProduct < ActiveRecord::Base
   end
   
   def no_negative_payment_amount
-    zero_value = BigDecimal('0')
+    zero_amount = BigDecimal('0')
     if principal.present? and principal <= zero_amount
       errors.add(:principal, "Cicilan Principal  tidak boleh negative")
     end
@@ -48,9 +48,9 @@ class GroupLoanProduct < ActiveRecord::Base
     end
   end
   
-  def self.create_object( office, params) 
+  def self.create_object(   params) 
     new_object = self.new 
-    new_object.office_id         = office.id
+    new_object.office_id         = params[:office_id]
     new_object.total_weeks       = params[:total_weeks]
     new_object.principal         = BigDecimal( params[:principal] || '0')
     new_object.interest          = BigDecimal( params[:interest        ] || '0')

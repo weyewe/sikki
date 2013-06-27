@@ -337,9 +337,9 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   
   def total_weeks_paid
     if is_paying_current_week?
-      return = 1 + number_of_backlogs + number_of_future_weeks
+      return 1 + number_of_backlogs + number_of_future_weeks
     else
-      return = 0 + number_of_backlogs + number_of_future_weeks
+      return 0 + number_of_backlogs + number_of_future_weeks
     end
   end
   

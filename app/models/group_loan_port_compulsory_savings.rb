@@ -1,7 +1,6 @@
 # it will port group_loan compulsory savings => group_loan voluntary savings at the end of the period 
 class GroupLoanPortCompulsorySavings < ActiveRecord::Base
   attr_accessible :group_loan_membership_id 
-  has_many :transaction_activities, :as => :transaction_source 
   has_many :savings_entries, :as => :savings_source 
   
   validates_uniqueness_of :group_loan_membership_id 

@@ -1,0 +1,16 @@
+@total_weeks_2        = 8 
+@principal_2          = BigDecimal('20000')
+@interest_2           = BigDecimal("4000")
+@compulsory_savings_2 = BigDecimal("6000")
+@admin_fee_2          = BigDecimal('10000')
+@initial_savings_2    = BigDecimal('10000')
+
+@group_loan_product_2 = GroupLoanProduct.create_object({
+  :office_id          =>  @office.id,
+  :total_weeks        =>  @total_weeks_2              ,
+  :principal          =>  @principal_2                ,
+  :interest           =>  @interest_2                 , 
+  :min_savings        =>  @compulsory_savings_2       , 
+  :admin_fee          =>  @admin_fee_2                , 
+  :initial_savings    =>  @initial_savings_2 
+})

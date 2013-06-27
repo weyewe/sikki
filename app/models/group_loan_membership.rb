@@ -47,6 +47,10 @@ class GroupLoanMembership < ActiveRecord::Base
     self.destroy 
   end
   
+  def group_loan_product
+    self.group_loan_subcription.group_loan_product 
+  end
+  
   def mark_financial_education_attendance( params )
     if self.group_loan.is_financial_education_finalized? 
       errors.add(:is_attending_financial_education, "Tidak bisa edit. Pendidikan keuangan sudah difinalisasi")
