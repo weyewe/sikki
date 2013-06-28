@@ -112,4 +112,15 @@ describe GroupLoanSubcription do
   it 'should have started group_loan' do
     @group_loan.is_started?.should be_true 
   end
+  
+  it 'should not change group_loan_product_id if the group loan has started' do
+    first_subcription = GroupLoanSubcription.first 
+    
+    first_subcription.update_object({
+      :group_loan_product_id => @group_loan_product_2.id ,
+      :group_loan_membership_id => first_subcription.group_loan_membership_id
+    })
+    
+    first_subcription.errors.size.should_not == 0 
+  end
 end
