@@ -8,21 +8,26 @@ class Member < ActiveRecord::Base
   has_many :saving_entries 
   has_many :savings_account_payments 
   
+  validates_uniqueness_of :id_number 
+  validates_presence_of :name, :id_number , :office_id
+  
   def self.create_object(params)
-    new_object = self.new
-    new_object.name = params[:name]
-    new_object.address = params[:address]
+    new_object           = self.new
+    new_object.name      = params[:name]
+    new_object.address   = params[:address]
     new_object.office_id = params[:office_id]
-    
+    new_object.id_number = params[:id_number]
+
     new_object.save
     
     return new_object 
   end
   
   def update_object(params)
-    self.name    = params[:name]
-    self.address = params[:address]
-    
+    self.name      = params[:name]
+    self.address   = params[:address]
+    self.id_number = params[:id_number]
+
     self.save 
   end
   

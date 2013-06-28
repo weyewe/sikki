@@ -11,7 +11,8 @@ describe GroupLoan do
       Member.create_object({
         :name =>  "Member #{number}",
         :address => "Address alamat #{number}" ,
-        :office_id => @office.id
+        :office_id => @office.id,
+        :id_number => "342432#{number}"
       })
     end
     
@@ -28,6 +29,7 @@ describe GroupLoan do
     @initial_savings_1    = BigDecimal('10000')
     
     @group_loan_product_1 = GroupLoanProduct.create_object({
+      :name => "Produk 1, 500 Ribu",
       :office_id          =>  @office.id,
       :total_weeks        =>  @total_weeks_1              ,
       :principal          =>  @principal_1                ,
@@ -45,6 +47,7 @@ describe GroupLoan do
     @initial_savings_2    = BigDecimal('5000')
 
     @group_loan_product_2 = GroupLoanProduct.create_object({
+      :name => "Product 2, 800ribu",
       :office_id          =>  @office.id,
       :total_weeks        =>  @total_weeks_2              ,
       :principal          =>  @principal_2                ,

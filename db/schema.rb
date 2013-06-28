@@ -117,6 +117,7 @@ ActiveRecord::Schema.define(:version => 20130627062307) do
   end
 
   create_table "group_loan_products", :force => true do |t|
+    t.string   "name"
     t.decimal  "principal",       :precision => 9, :scale => 2, :default => 0.0
     t.decimal  "interest",        :precision => 9, :scale => 2, :default => 0.0
     t.decimal  "min_savings",     :precision => 9, :scale => 2, :default => 0.0
@@ -220,6 +221,7 @@ ActiveRecord::Schema.define(:version => 20130627062307) do
     t.string   "name"
     t.text     "address"
     t.integer  "office_id"
+    t.string   "id_number"
     t.decimal  "total_savings_account", :precision => 12, :scale => 2, :default => 0.0
     t.datetime "created_at",                                                            :null => false
     t.datetime "updated_at",                                                            :null => false

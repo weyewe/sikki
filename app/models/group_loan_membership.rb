@@ -19,6 +19,17 @@ class GroupLoanMembership < ActiveRecord::Base
   
   has_many :group_loan_backlogs 
   
+  validates_presence_of :group_loan_id, :member_id 
+  validate :no_active_membership_of_another_group_loan
+  
+  def no_active_membership_of_another_group_loan
+    return if self.persisted? or not self.member_id.present? 
+    
+    if GroupLoanMembership.where(:is_active => true, :member_id => self.member_id ).count != 0
+      self.errors.add(:member_id , "Sudah ada pinjaman di group lainnya")
+    end
+  end
+  
   def self.create_object( params ) 
     new_object = self.new 
     new_object.group_loan_id      = params[:group_loan_id] 

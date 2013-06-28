@@ -9,7 +9,8 @@ class GroupLoanProduct < ActiveRecord::Base
                         :interest,
                         :min_savings,
                         :admin_fee, 
-                        :initial_savings
+                        :initial_savings,
+                        :name 
         
   
   has_many :group_loan_subcriptions
@@ -19,63 +20,96 @@ class GroupLoanProduct < ActiveRecord::Base
   validate :total_weeks_must_not_be_zero
   validate :no_negative_payment_amount 
   
+  validate :allow_update_if_no_subcriptions
+  
   def total_weeks_must_not_be_zero
-    if total_weeks.present? and total_weeks <=  0 
+    return  if not all_fields_present? 
+    if  total_weeks <=  0 
       errors.add(:total_weeks, "Jumlah minggu cicilan harus lebih besar dari 0")
     end
   end
   
   def no_negative_payment_amount
+    return  if not all_fields_present? 
+    
     zero_amount = BigDecimal('0')
-    if principal.present? and principal <= zero_amount
+    
+    if principal <= zero_amount
       errors.add(:principal, "Cicilan Principal  tidak boleh negative")
     end
     
-    if interest.present? and interest <= zero_amount
+    if interest <= zero_amount
       errors.add(:interest, "Bunga tidak boleh negative")
     end
     
-    if min_savings.present? and min_savings <= zero_amount
+    if min_savings <= zero_amount
       errors.add(:min_savings, "Tabungan wajib tidak boleh negative")
     end
     
-    if admin_fee.present? and admin_fee <= zero_amount
+    if admin_fee <= zero_amount
       errors.add(:admin_fee, "Biaya administrasi tidak boleh negative")
     end
     
-    if initial_savings.present? and initial_savings <= zero_amount
+    if initial_savings <= zero_amount
       errors.add(:initial_savings, "Simpanan awal tidak boleh negative")
     end
   end
   
+  def allow_update_if_no_subcriptions
+    return  if not all_fields_present? 
+    
+    if self.persisted? and self.group_loan_subcriptions.count != 0 
+      self.errors.add(:generic_errors, "Sudah ada peminjaman dengan menggunakan product ini")
+    end
+  end
+  
+  def all_fields_present?
+    name.present? and 
+    office_id.present? and 
+    total_weeks.present? and 
+    principal.present?              and   
+    interest.present?               and   
+    min_savings.present?            and   
+    admin_fee.present?              and
+    initial_savings.present? 
+  end
+  
+  
   def self.create_object(   params) 
-    new_object = self.new 
-    new_object.office_id         = params[:office_id]
-    new_object.total_weeks       = params[:total_weeks]
-    new_object.principal         = BigDecimal( params[:principal] || '0')
-    new_object.interest          = BigDecimal( params[:interest        ] || '0')
-    new_object.min_savings       = BigDecimal( params[:min_savings     ] || '0')
-    new_object.admin_fee         = BigDecimal( params[:admin_fee       ] || '0')
-    new_object.initial_savings   = BigDecimal( params[:initial_savings ] || '0')
+    new_object                 = self.new 
+    new_object.name            = params[:name]
+    new_object.office_id       = params[:office_id]
+    new_object.total_weeks     = params[:total_weeks]
+    new_object.principal       = BigDecimal( params[:principal] || '0')
+    new_object.interest        = BigDecimal( params[:interest        ] || '0')
+    new_object.min_savings     = BigDecimal( params[:min_savings     ] || '0')
+    new_object.admin_fee       = BigDecimal( params[:admin_fee       ] || '0')
+    new_object.initial_savings = BigDecimal( params[:initial_savings ] || '0')
     
     
     new_object.save 
     return new_object
   end
   
-  def self.update_object( params ) 
-    return nil if self.group_loan_subcriptions.count != 0
+  def update_object( params ) 
     
-    self.total_weeks       = params[:total_weeks]
-    self.principal         = BigDecimal( params[:principal] || '0')
-    self.interest          = BigDecimal( params[:interest        ] || '0')
-    self.min_savings       = BigDecimal( params[:min_savings     ] || '0')
-    self.admin_fee         = BigDecimal( params[:admin_fee       ] || '0')
-    self.initial_savings   = BigDecimal( params[:initial_savings ] || '0')
-    
+    self.name            = params[:name]
+    self.total_weeks     = params[:total_weeks]
+    self.principal       = BigDecimal( params[:principal] || '0')
+    self.interest        = BigDecimal( params[:interest        ] || '0')
+    self.min_savings     = BigDecimal( params[:min_savings     ] || '0')
+    self.admin_fee       = BigDecimal( params[:admin_fee       ] || '0')
+    self.initial_savings = BigDecimal( params[:initial_savings ] || '0')
     
     self.save 
     return self
+  end
+  
+  def delete_object
+    allow_update_if_no_subcriptions # validation 
+    return if self.errors.size != 0 
+    
+    self.destroy 
   end
   
   def disbursed_principal
