@@ -64,7 +64,6 @@ class GroupLoanDisbursement < ActiveRecord::Base
   
   def create_initial_compulsory_savings 
     SavingsEntry.create_group_loan_disbursement_initial_compulsory_savings( self )
-    
   end
   
 end

@@ -11,7 +11,8 @@ describe GroupLoanMembership do
       Member.create_object({
         :name =>  "Member #{number}",
         :address => "Address alamat #{number}" ,
-        :office_id => @office.id
+        :office_id => @office.id,
+        :id_number => "342432#{number}"
       })
     end
     
@@ -44,7 +45,7 @@ describe GroupLoanMembership do
     @compulsory_savings_2 = BigDecimal("4000")
     @admin_fee_2          = BigDecimal('10000')
     @initial_savings_2    = BigDecimal('5000')
-
+    
     @group_loan_product_2 = GroupLoanProduct.create_object({
       :name => "Product 2, 800ribu",
       :office_id          =>  @office.id,
@@ -82,8 +83,7 @@ describe GroupLoanMembership do
       GroupLoanMembership.create_object({
         :group_loan_id => @group_loan.id,
         :sub_group_loan_id => sub_group.id ,
-        :member_id => member.id ,
-        :id_number => "342432#{number}"
+        :member_id => member.id  
       })
     end
     
@@ -96,20 +96,26 @@ describe GroupLoanMembership do
       :is_compulsory_weekly_attendance  => true
     })
     
+    
+  end
+  
+  it 'should have created members' do
+    Member.count.should == 8 
+  end
+    
+  it 'should not allow member to be a member of another group_loan if he is still an active member of group_loan' do
     @member_1 = Member.first 
     @glm_double = GroupLoanMembership.create_object({
-      :group_loan_id => @group_loan.id,
+      :group_loan_id => @group_loan_2.id,
       :sub_group_loan_id => nil ,
       :member_id => @member_1.id 
     })
-  end
-  
-  it 'should not allow member to be a member of another group_loan if he is still an active member of group_loan' do
+    
     @glm_double.should_not be_valid 
   end
   
   it 'should not allow double group_loan membership of the same member and group_loan' do
-    first_member = Member.first 
+    @member_1 = Member.first 
     new_glm = GroupLoanMembership.create_object({
       :group_loan_id => @group_loan.id,
       :sub_group_loan_id => nil ,
@@ -127,28 +133,84 @@ describe GroupLoanMembership do
   
   
   context "group loan has started" do
-    it 'should be able to change group'
-    it 'should be able to change sub_group'
+    before(:each) do
+      @group_loan.set_group_leader( @group_loan.active_group_loan_memberships.first )
+      @sub_group_1.set_sub_group_leader( @sub_group_1.active_group_loan_memberships.first )
+      @sub_group_2.set_sub_group_leader( @sub_group_2.active_group_loan_memberships.first )
+  
+      @group_loan.reload
+      counter = 0 
+      @group_loan.active_group_loan_memberships.each do |glm|
+        glp = @group_loan_product_1 
+        glp = @group_loan_product_2 if counter%2 == 1
+        counter +=1 
+  
+        GroupLoanSubcription.create_object({
+          :group_loan_product_id => glp.id ,
+          :group_loan_membership_id => glm.id 
+        })
+      end
+  
+      @group_loan.reload
+      @group_loan.start
+    end
     
-    context "financial_education phase" do
-      it 'should be able to change group'
-      it 'should be able to change sub_group'
+    it 'should have been started' do
+      @group_loan.is_started.should be_true 
+    end
+  
+    it 'should be able to change sub group' do
+      @first_glm = GroupLoanMembership.first 
       
-      context "loan disbursement phase" do
-        it 'should be able to change group'
-        it 'should be able to change sub_group'
-        
-        context "weekly_payment phase" do
-          it 'should not be able to change group'
-          it 'should not be able to change sub_group'
-          
-          it 'should not be able to assign group_leader to inactive member' 
-          it 'should not be able to assign sub_group_leader to inactive member'
+      sub_group = @sub_group_1 
+      if @first_glm.sub_group_loan_id == sub_group.id 
+        sub_group = @sub_group_2
+      end
+      
+      @first_glm.update_object({
+        :group_loan_id => @first_glm.group_loan_id,
+        :sub_group_loan_id => sub_group.id  ,
+        :member_id => @first_glm.member_id  
+      })
+      
+      @first_glm.should be_valid 
+      
+      
+    end
+    
+    context "past financial_education phase" do
+      before(:each) do
+        # finalize the financial education + add marker 
+      end
+      
+      it 'should be able to change sub group' do
+        @first_glm = GroupLoanMembership.first 
+
+        sub_group = @sub_group_1 
+        if @first_glm.sub_group_loan_id == sub_group.id 
+          sub_group = @sub_group_2
         end
+
+        @first_glm.update_object({
+          :group_loan_id => @first_glm.group_loan_id,
+          :sub_group_loan_id => sub_group.id  ,
+          :member_id => @first_glm.member_id  
+        })
+
+        @first_glm.should be_valid 
+
+
+      end
+      
+      context "past loan disbursement phase" do 
+        it 'should not be able to change sub_group'
+        
+        it 'should not be able to assign group_leader to inactive member' 
+        it 'should not be able to assign sub_group_leader to inactive member'
       end
     end
   end
   
-  
-   
+
+ 
 end

@@ -184,7 +184,7 @@ Phase: financial education finalization
 =end
   
   def is_all_financial_education_attendances_marked?
-    self.active_group_loan_memberships.where( is_attending_financial_education.eq nil).count == 0 
+    self.active_group_loan_memberships.where{ is_attending_financial_education.eq nil}.count == 0 
   end
   
   def deactivate_memberships_for_absentee_in_financial_education

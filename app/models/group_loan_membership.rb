@@ -72,6 +72,16 @@ class GroupLoanMembership < ActiveRecord::Base
     self.save 
   end
   
+  def mark_loan_disbursement_attendance( params )
+    if self.group_loan.is_loan_disbursed? 
+      errors.add(:is_attending_loan_disbursement, "Tidak bisa edit. Penyaluran Pinjaman sudah difinalisasi")
+      return 
+    end
+    
+    self.is_attending_loan_disbursement = params[:is_attending_loan_disbursement]
+    self.save 
+  end
+  
    
   def total_unpaid_backlogs
     unpaid_backlogs.count 

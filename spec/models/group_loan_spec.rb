@@ -118,9 +118,30 @@ describe GroupLoan do
   end
   
   it 'should be started' do
-    # @group_loan.is_started.should be_true 
-    @group_loan.errors.messages.each do |msg|
-      puts "#{msg}"
+    @group_loan.is_started.should be_true 
+  end
+  
+  
+  context "finalizing financial education" do
+    before(:each) do
+      @group_loan.active_group_loan_memberships.each do |glm|
+        glm.mark_financial_education_attendance( {
+          :is_attending_financial_education => true 
+        } )
+      end
+      @group_loan.finalize_financial_education 
+      @group_loan.reload 
+    end
+    
+    it 'should have finalized financial education' do
+      @group_loan.is_financial_education_finalized.should be_true 
+    end
+    
+    
+    context "finalizing loan disbursement" do
+      before(:each) do
+      end
     end
   end
+  
 end
