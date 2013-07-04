@@ -140,6 +140,44 @@ describe GroupLoan do
     
     context "finalizing loan disbursement" do
       before(:each) do
+        @group_loan.active_group_loan_memberships.each do |glm|
+          glm.mark_loan_disbursement_attendance( {
+            :is_attending_loan_disbursement => true 
+          } )
+        end
+        @group_loan.finalize_loan_disbursement
+        @group_loan.reload 
+      end
+      
+      it 'should finalize the loan disbursement' do
+        @group_loan.is_loan_disbursement_finalized.should be_true 
+      end
+      
+      it 'should progres to weekly payment period phase' do
+        @group_loan.is_weekly_payment_period_phase?.should be_true 
+      end
+      
+      it 'should produce weekly tasks' do
+        @group_loan.group_loan_weekly_tasks.count.should == @group_loan.loan_duration 
+      end
+      
+      it 'should produce default payments for active glm' do
+        active_glm_id_list = @group_loan.active_group_loan_memberships.map{|x| x.id }
+        GroupLoanDefaultPayment.where(:group_loan_membership_id => active_glm_id_list).count.should == @group_loan.active_group_loan_memberships.count
+      end
+      
+      it 'should produce weekly responsibilities' do
+        active_glm_id_list = @group_loan.active_group_loan_memberships.map{|x| x.id }
+        total_active_glm = active_glm_id_list.length 
+        GroupLoanWeeklyResponsibility.where(:group_loan_membership_id => active_glm_id_list).count.should == total_active_glm*@group_loan.loan_duration 
+      end
+      
+      context "performing weekly payment period phase : with unpaid backlog in the end" do
+        # performed @the details 
+      end
+      
+      context 'performing weekly payment period phase: no unpaid backlog' do
+        # performed @the details spec/model/group_loan/... 
       end
     end
   end

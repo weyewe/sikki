@@ -10,8 +10,12 @@ Cash_Direction          Savings_Direction       What does it mean?
 class TransactionActivity < ActiveRecord::Base
   attr_accessible :transaction_source_id, 
                   :transaction_source_type,
-                  :incoming_cash,
-                  :incoming_savings 
+                  :cash,
+                  :cash_direction,
+                  :savings_direction, 
+                  :savings, 
+                  :member_id, 
+                  :office_id
                   
   belongs_to :transaction_source, :polymorphic => true 
 end

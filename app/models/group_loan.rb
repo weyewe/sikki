@@ -96,8 +96,8 @@ class GroupLoan < ActiveRecord::Base
   def is_financial_education_phase?
     is_started? and 
     not is_financial_education_finalized? and
-    not is_loan_disbursed? and 
-    not is_group_weekly_payment_closed? and 
+    not is_loan_disbursement_finalized? and 
+    not is_weekly_payment_period_closed? and 
     not is_grace_period_payment_closed?  and 
     not is_default_payment_period_closed? and 
     not is_closed? 
@@ -106,8 +106,8 @@ class GroupLoan < ActiveRecord::Base
   def is_loan_disbursement_phase? 
     is_started? and 
     is_financial_education_finalized? and
-    not is_loan_disbursed? and 
-    not is_group_weekly_payment_closed? and 
+    not is_loan_disbursement_finalized? and 
+    not is_weekly_payment_period_closed? and 
     not is_grace_period_payment_closed? and 
     not is_default_payment_period_closed? and 
     not is_closed?
@@ -116,8 +116,8 @@ class GroupLoan < ActiveRecord::Base
   def is_weekly_payment_period_phase?
     is_started? and 
     is_financial_education_finalized? and
-    is_loan_disbursed? and 
-    not is_group_weekly_payment_closed? and 
+    is_loan_disbursement_finalized? and 
+    not is_weekly_payment_period_closed? and 
     not is_grace_period_payment_closed? and 
     not is_default_payment_period_closed? and 
     not is_closed?
@@ -126,8 +126,8 @@ class GroupLoan < ActiveRecord::Base
   def is_grace_payment_period_phase?
     is_started? and 
     is_financial_education_finalized? and
-    is_loan_disbursed? and 
-    is_group_weekly_payment_closed? and 
+    is_loan_disbursement_finalized? and 
+    is_weekly_payment_period_closed? and 
     not is_grace_period_payment_closed? and 
     not is_default_payment_period_closed? and 
     not is_closed?
@@ -136,8 +136,8 @@ class GroupLoan < ActiveRecord::Base
   def is_default_payment_resolution_phase?
     is_started? and 
     is_financial_education_finalized? and
-    is_loan_disbursed? and 
-    is_group_weekly_payment_closed? and 
+    is_loan_disbursement_finalized? and 
+    is_weekly_payment_period_closed? and 
     is_grace_period_payment_closed? and 
     not is_default_payment_period_closed? and 
     not is_closed? 
@@ -146,8 +146,8 @@ class GroupLoan < ActiveRecord::Base
   def is_closing_phase?
     is_started? and 
     is_financial_education_finalized? and
-    is_loan_disbursed? and 
-    is_group_weekly_payment_closed? and 
+    is_loan_disbursement_finalized? and 
+    is_weekly_payment_period_closed? and 
     is_grace_period_payment_closed? and 
     is_default_payment_period_closed? and 
     not is_closed? 
@@ -218,7 +218,7 @@ Phase: loan disbursement finalization
 =end
 
   def is_all_loan_disbursement_attendances_marked?
-    self.active_group_loan_memberships.where( is_attending_loan_disbursement.eq nil).count == 0 
+    self.active_group_loan_memberships.where{is_attending_loan_disbursement.eq nil} .count == 0 
   end
   
   def deactivate_memberships_for_absentee_in_loan_disbursement
@@ -243,8 +243,11 @@ Phase: loan disbursement finalization
   end
   
   def create_weekly_tasks
+    loan_duration = self.loan_duration
+    
     (1..loan_duration).each do |week_number|
-      GroupLoanWeeklyTask.create :week_number => week_number
+      GroupLoanWeeklyTask.create :week_number => week_number, 
+                                  :group_loan_id => self.id 
     end
   end
   
@@ -292,7 +295,7 @@ Phase: loan disbursement finalization
   def loan_duration
     duration_array = []
     self.active_group_loan_memberships.each do |glm|
-      duration_array << glm.group_loan_subcription.total_weeks
+      duration_array << glm.group_loan_product.total_weeks
     end
     
     return duration_array.uniq.first  
@@ -423,12 +426,12 @@ Phase: loan disbursement finalization
        return self
      end
 
-     if self.is_grace_payment_period_closed?
+     if self.is_grace_period_payment_closed?
        errors.add(:generic_errors, "Pembayaran grace period sudah tutup")
        return self
      end
      
-     self.is_grace_payment_period_closed = true
+     self.is_grace_period_payment_closed = true
      self.save 
      self.calculate_default_resolution_amount 
      self.reload 
@@ -489,7 +492,7 @@ Phase: loan disbursement finalization
       return self
     end
 
-    self.is_grace_payment_period_closed = true
+    self.is_grace_period_payment_closed = true
     self.save 
     self.execute_default_resolution # specified in the group loan: default or custom 
     self.port_compulsory_savings_to_voluntary_savings  

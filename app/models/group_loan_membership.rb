@@ -63,8 +63,8 @@ class GroupLoanMembership < ActiveRecord::Base
   end
   
   def mark_financial_education_attendance( params )
-    if self.group_loan.is_financial_education_finalized? 
-      errors.add(:is_attending_financial_education, "Tidak bisa edit. Pendidikan keuangan sudah difinalisasi")
+    if not self.group_loan.is_financial_education_phase?  
+      errors.add(:is_attending_financial_education, "Tidak bisa edit. Bukan di fase pendidikan keuangan")
       return 
     end
     
@@ -73,8 +73,13 @@ class GroupLoanMembership < ActiveRecord::Base
   end
   
   def mark_loan_disbursement_attendance( params )
-    if self.group_loan.is_loan_disbursed? 
+    if not self.group_loan.is_loan_disbursement_phase?
       errors.add(:is_attending_loan_disbursement, "Tidak bisa edit. Penyaluran Pinjaman sudah difinalisasi")
+      return 
+    end
+    
+    if not self.is_active?
+      errors.add(:is_attending_loan_disbursement, "Tidak bisa edit. Anggota ini sudah tidak aktif")
       return 
     end
     

@@ -1,3 +1,27 @@
 mark financial  disbursement , finalize financial disbursement @group_loan => DONE 
 
-mark loan disbursement  => not done 
+mark loan disbursement  => not done   DONE.. byproduct is analyzed. 
+
+
+TODO:
+
+1. GroupLoanWeeklyPayment 
+	* 3  categories: 
+		a. Testing the payment and the byproduct    (will be executed during weekly_task confirmation)
+		b. Business logic to ensure the precondition 
+		c. Update/Delete post confirmation => LATER! not now 
+		
+
+	-> For the current_week payment, the prev weekly task must be finalized 
+	-> For the future week payment, the prev_weekly task can be open 
+	-> If the current_week has been paid, can't double pay 
+	-> if the number of future weeks is more than the number of uncleared week (can be no payment or only savinsg), error
+	-> if the number of backlogs is more than unpaid backlog, will generate error
+	-> no_payment/only_savings clearance will produce backlog 
+	 
+	
+2. GroupLoanIndependentPayment
+
+
+3. GroupLoanGracePeriod Payment
+4. GroupLoanDefaultResolution => Standard or Custom (set at group_loan level)

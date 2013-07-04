@@ -13,9 +13,12 @@ class CreateGroupLoans < ActiveRecord::Migration
       
       t.boolean :is_started, :default => false 
       t.boolean :is_financial_education_finalized, :default => false 
-      t.boolean :is_loan_disbursed, :default => false 
+      t.boolean :is_loan_disbursement_finalized, :default => false 
       t.boolean :is_weekly_payment_period_closed, :default => false 
-      t.boolean :is_grace_payment_period_closed , :default => false
+      
+      # is_weekly_payment_period_closed
+      
+      t.boolean :is_grace_period_payment_closed , :default => false
       t.boolean :is_default_payment_period_closed , :default => false  
       
       t.boolean :is_closed, :default => false

@@ -1,7 +1,15 @@
 class GroupLoanDisbursement < ActiveRecord::Base
-  attr_accessible :group_loan_membership_id 
+  attr_accessible :group_loan_membership_id
+                  
+                  
+  
+  
+  
+  
   has_many :transaction_activities, :as => :transaction_source 
   has_many :savings_entries, :as => :savings_source 
+  
+  belongs_to :group_loan_membership
   
   validates_uniqueness_of :group_loan_membership_id 
   

@@ -1,5 +1,5 @@
 class GroupLoanWeeklyTask < ActiveRecord::Base
-  attr_accessible :week_number 
+  attr_accessible :week_number , :group_loan_id
   # week 1
   # week 2 
   # week 3 

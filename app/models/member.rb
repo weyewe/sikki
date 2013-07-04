@@ -5,7 +5,7 @@ class Member < ActiveRecord::Base
   has_many :group_loans, :through => :group_loan_memberships 
   has_many :group_loan_memberhips 
   
-  has_many :saving_entries 
+  has_many :savings_entries 
   has_many :savings_account_payments 
   
   validates_uniqueness_of :id_number 
