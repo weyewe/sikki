@@ -39,6 +39,8 @@ Deactivation Status
       # for history analysis
       # we can count the number of GroupLoanBacklog generated (to understand whether a member is NPL or whatever)
       
+      t.integer :savings_return_employee_id
+      
 
       t.timestamps
     end

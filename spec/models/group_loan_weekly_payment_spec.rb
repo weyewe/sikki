@@ -139,24 +139,24 @@ describe GroupLoanWeeklyPayment do
     @group_loan.group_loan_weekly_tasks.count.should == @group_loan.loan_duration
   end
   
-  # it 'should allow group loan weekly payment creation' do
-  #   @glw_payment =  GroupLoanWeeklyPayment.create_object({
-  #     :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
-  #     :group_loan_membership_id            => @glm_1.id                                           ,
-  #     :group_loan_id                       => @group_loan.id                                      ,
-  #     :number_of_backlogs                  => 0                                                   ,
-  #     :is_paying_current_week              => true                                                ,
-  #     :is_only_savings                     => false                                               ,
-  #     :is_no_payment                       => false                                               ,
-  #     :is_only_voluntary_savings           => false ,
-  #     :number_of_future_weeks              => 0                                                   ,
-  #     :voluntary_savings_withdrawal_amount => 0                                                   ,
-  #     :cash_amount                         => @glm_1.group_loan_product.weekly_payment_amount
-  #   })
-  #   
-  #   @glw_payment.should be_valid 
-  # end
-  # 
+  it 'should allow group loan weekly payment creation' do
+    @glw_payment =  GroupLoanWeeklyPayment.create_object({
+      :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+      :group_loan_membership_id            => @glm_1.id                                           ,
+      :group_loan_id                       => @group_loan.id                                      ,
+      :number_of_backlogs                  => 0                                                   ,
+      :is_paying_current_week              => true                                                ,
+      :is_only_savings                     => false                                               ,
+      :is_no_payment                       => false                                               ,
+      :is_only_voluntary_savings           => false ,
+      :number_of_future_weeks              => 0                                                   ,
+      :voluntary_savings_withdrawal_amount => 0                                                   ,
+      :cash_amount                         => @glm_1.group_loan_product.weekly_payment_amount
+    })
+    
+    @glw_payment.should be_valid 
+  end
+  
   it 'should not have cleared the current week' do
     @glm_1.has_cleared_weekly_payment?(@active_weekly_task).should be_false 
   end
@@ -195,6 +195,7 @@ describe GroupLoanWeeklyPayment do
       :is_paying_current_week              => true                                                ,
       :is_only_savings                     => false                                               ,
       :is_no_payment                       => true                                               ,
+      :is_only_voluntary_savings           => false ,
       :number_of_future_weeks              => 0                                                   ,
       :voluntary_savings_withdrawal_amount => 0                                                   ,
       :cash_amount                         => @glm_1.group_loan_product.weekly_payment_amount
@@ -210,6 +211,7 @@ describe GroupLoanWeeklyPayment do
       :is_paying_current_week              => false                                                ,
       :is_only_savings                     => false                                               ,
       :is_no_payment                       => true                                               ,
+      :is_only_voluntary_savings           => false ,
       :number_of_future_weeks              => 0                                                   ,
       :voluntary_savings_withdrawal_amount => 0                                                   ,
       :cash_amount                         => @glm_1.group_loan_product.weekly_payment_amount
@@ -225,6 +227,7 @@ describe GroupLoanWeeklyPayment do
       :is_paying_current_week              => false                                                ,
       :is_only_savings                     => true                                               ,
       :is_no_payment                       => false                                               ,
+      :is_only_voluntary_savings           => false ,
       :number_of_future_weeks              => 0                                                   ,
       :voluntary_savings_withdrawal_amount => 0                                                   ,
       :cash_amount                         => @glm_1.group_loan_product.weekly_payment_amount
@@ -233,4 +236,67 @@ describe GroupLoanWeeklyPayment do
     @glw_payment.should be_valid
   end
   
+  it 'should have valid amount of paymnet' do
+    @glw_payment =  GroupLoanWeeklyPayment.create_object({
+      :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+      :group_loan_membership_id            => @glm_1.id                                           ,
+      :group_loan_id                       => @group_loan.id                                      ,
+      :number_of_backlogs                  => 0                                                   ,
+      :is_paying_current_week              => true                                                ,
+      :is_only_savings                     => false                                               ,
+      :is_no_payment                       => false                                               ,
+      :is_only_voluntary_savings           => false ,
+      :number_of_future_weeks              => 0                                                   ,
+      :voluntary_savings_withdrawal_amount => 0                                                   ,
+      :cash_amount                         => @glm_1.group_loan_product.weekly_payment_amount  - BigDecimal("500")
+    })
+    
+    @glw_payment.should_not be_valid
+  end
+  
+  it 'should not allow is_only_voluntary_savings if the current week is not cleared' do
+    @glw_payment =  GroupLoanWeeklyPayment.create_object({
+      :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+      :group_loan_membership_id            => @glm_1.id                                           ,
+      :group_loan_id                       => @group_loan.id                                      ,
+      :number_of_backlogs                  => 0                                                   ,
+      :is_paying_current_week              => false                                                ,
+      :is_only_savings                     => false                                               ,
+      :is_no_payment                       => false                                               ,
+      :is_only_voluntary_savings           => true ,
+      :number_of_future_weeks              => 0                                                   ,
+      :voluntary_savings_withdrawal_amount => 0                                                   ,
+      :cash_amount                         => @glm_1.group_loan_product.weekly_payment_amount 
+    })
+
+    @glw_payment.should_not be_valid
+  end
+  
+  it 'should not allow payment with voluntary savings if it is not sufficient' do
+    @glw_payment =  GroupLoanWeeklyPayment.create_object({
+      :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+      :group_loan_membership_id            => @glm_1.id                                           ,
+      :group_loan_id                       => @group_loan.id                                      ,
+      :number_of_backlogs                  => 0                                                   ,
+      :is_paying_current_week              => false                                                ,
+      :is_only_savings                     => false                                               ,
+      :is_no_payment                       => false                                               ,
+      :is_only_voluntary_savings           => true ,
+      :number_of_future_weeks              => 0                                                   ,
+      :voluntary_savings_withdrawal_amount => @glm_1.group_loan_product.weekly_payment_amount                                                   ,
+      :cash_amount                         => 0
+    })
+
+    @glw_payment.should_not be_valid
+  end
+  
+  context "payment using voluntary savings" do
+    before(:each) do
+      # add the voluntary savings (manual voluntary savings addition)
+      GroupLoanVoluntarySavingsAddition.create  :group_loan_membership_id => self.id , 
+                                                :amount => self.closing_withdrawal_amount,
+                                                :employee_id => @employee.id ,
+                                                :group_loan_id => @group_loan.id 
+    end
+  end
 end

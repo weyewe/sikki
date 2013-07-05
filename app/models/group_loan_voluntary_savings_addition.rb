@@ -1,19 +1,16 @@
-class GroupLoanVoluntarySavingsWithdrawal < ActiveRecord::Base
+class GroupLoanVoluntarySavingsAddition < ActiveRecord::Base
   attr_accessible :amount, :group_loan_membership_id, :group_loan_id , :employee_id
-  
   validates_presence_of :amount, :group_loan_membership_id , :group_loan_id  , :employee_id
   
   validate :amount_must_not_be_zero
-  validate :amount_must_not_exceed_total_voluntary_savings 
-  validate :no_more_than_one_unconfirmed_voluntary_savings_withdrawal
-  
+  validate :no_more_than_one_unconfirmed_voluntary_savings_addition
   
   belongs_to :group_loan 
+  
   
   belongs_to :group_loan_membership 
   
   has_one :savings_entry 
-  
   
   def all_fields_present?
     amount.present?                                  and   
@@ -32,15 +29,8 @@ class GroupLoanVoluntarySavingsWithdrawal < ActiveRecord::Base
     end
   end
   
-  def amount_must_not_exceed_total_voluntary_savings
-    return if not all_fields_present?
-    
-    if amount  > group_loan_membership.total_voluntary_savings 
-      self.errors.add(:amount, "Tidak boleh lebih besar dari #{group_loan_membership.total_voluntary_savings}")
-    end
-  end
-  
-  def no_more_than_one_unconfirmed_voluntary_savings_withdrawal
+   
+  def no_more_than_one_unconfirmed_voluntary_savings_addition
     return if not all_fields_present?
     
     if self.class.where(
@@ -74,17 +64,17 @@ class GroupLoanVoluntarySavingsWithdrawal < ActiveRecord::Base
     
     TransactionActivity.create :transaction_source_id => self.id, 
                               :transaction_source_type => self.class.to_s,
-                              :cash => BigDecimal('0') ,
-                              :cash_direction => FUND_DIRECTION[:incoming], # doesn't matter
-                              :savings =>  self.amount,
-                              :savings_direction => FUND_DIRECTION[:outgoing],
+                              :cash => self.amount ,
+                              :cash_direction => FUND_DIRECTION[:incoming],  
+                              :savings =>  BigDecimal("0"),
+                              :savings_direction => FUND_DIRECTION[:outgoing], # doesn't matter 
                               :member_id => member.id, 
                               :office_id => member.office_id
                               
   end
   
   def create_savings_entries
-    SavingsEntry.create_group_loan_voluntary_savings_withdrawal( self,  self.amount )
+    SavingsEntry.create_group_loan_voluntary_savings_addition( self,  self.amount )
   end
   
   

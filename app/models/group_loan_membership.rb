@@ -171,21 +171,41 @@ class GroupLoanMembership < ActiveRecord::Base
   end
   
   
-  def assign_closing_withdrawal_amount(amount)
+  def assign_closing_withdrawal_amount(params)
+    # return if the group loan is closed
+    if group_loan.is_closed? 
+      self.errors.add(:generic_errors, "Pinjaman kumpulan sudah ditutup. Tidak boleh edit.")
+      return self
+    end
+    
     if amount > total_voluntary_savings
       self.errors.add(:closing_withdrawal_amount, "Penarikan tidak boleh lebih dari #{total_voluntary_savings}")
       return self
     end
     
-    self.closing_withdrawal_amount  = amount
-    self.closing_savings_amount = total_voluntary_savings - amount
+    if not params[:savings_return_employee_id].present? 
+      self.errors.add(:savings_return_employee_id, "Harus menulis nama karyawan yang mengembalikan tabungan")
+      return self
+    end
+    
+    self.closing_withdrawal_amount  = BigDecimal( params[:closing_withdrawal_amount])
+    self.closing_savings_amount = total_voluntary_savings - BigDecimal( params[:closing_withdrawal_amount])
+    self.savings_return_employee_id = params[:savings_return_employee_id]
     self.save 
   end
   
   def port_voluntary_savings_to_savings_account
+    # scenario: before closing group loan, key in the savings not withdrawn...
+    
+    
     if self.closing_withdrawal_amount != BigDecimal('0')
-      GroupLoanVoluntarySavingsWithdrawal.create  :group_loan_membership_id => self.id , 
-                                                :amount => self.closing_withdrawal_amount
+      withdrawal = GroupLoanVoluntarySavingsWithdrawal.create  :group_loan_membership_id => self.id , 
+                                                :amount => self.closing_withdrawal_amount,
+                                                :employee_id => self.savings_return_employee_id, 
+                                                :group_loan_id => self.group_loan_id 
+                                                
+                                                
+      withdrawal.confirm 
     end                                            
                                                 
     if self.closing_savings_amount != BigDecimal('0')

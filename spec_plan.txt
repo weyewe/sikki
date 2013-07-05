@@ -6,6 +6,8 @@ mark loan disbursement  => not done   DONE.. byproduct is analyzed.
 TODO:
 
 1. GroupLoanWeeklyPayment 
+
+			## create saving_entry_addition => To test payment with voluntary_savings 
 	* 3  categories: 
 		a. Testing the payment and the byproduct    (will be executed during weekly_task confirmation)
 		b. Business logic to ensure the precondition 

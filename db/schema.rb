@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130627062307) do
+ActiveRecord::Schema.define(:version => 20130705035233) do
 
   create_table "employees", :force => true do |t|
     t.integer  "office_id"
@@ -100,6 +100,7 @@ ActiveRecord::Schema.define(:version => 20130627062307) do
     t.decimal  "amount_to_be_shared_with_non_defaultee", :precision => 9, :scale => 2, :default => 0.0
     t.decimal  "closing_withdrawal_amount",              :precision => 9, :scale => 2, :default => 0.0
     t.decimal  "closing_savings_amount",                 :precision => 9, :scale => 2, :default => 0.0
+    t.integer  "savings_return_employee_id"
     t.datetime "created_at",                                                                              :null => false
     t.datetime "updated_at",                                                                              :null => false
   end
@@ -134,6 +135,17 @@ ActiveRecord::Schema.define(:version => 20130627062307) do
     t.integer  "group_loan_product_id"
     t.datetime "created_at",               :null => false
     t.datetime "updated_at",               :null => false
+  end
+
+  create_table "group_loan_voluntary_savings_additions", :force => true do |t|
+    t.integer  "group_loan_membership_id"
+    t.integer  "group_loan_id"
+    t.integer  "employee_id"
+    t.decimal  "amount",                   :precision => 9, :scale => 2, :default => 0.0
+    t.boolean  "is_confirmed",                                           :default => false
+    t.datetime "confirmation_datetime"
+    t.datetime "created_at",                                                                :null => false
+    t.datetime "updated_at",                                                                :null => false
   end
 
   create_table "group_loan_voluntary_savings_withdrawals", :force => true do |t|
