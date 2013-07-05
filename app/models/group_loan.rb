@@ -289,6 +289,14 @@ Phase: loan disbursement finalization
   end
   
 =begin
+  Utility
+=end
+
+  def active_weekly_task
+    self.group_loan_weekly_tasks.where(:is_confirmed => false ).order("id ASC").first 
+  end
+  
+=begin
  Weekly Payment 
 =end
 

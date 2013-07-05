@@ -7,6 +7,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   
   belongs_to :group_loan_membership 
   belongs_to :group_loan 
+  belongs_to :group_loan_weekly_task
   
   
   # we have to separate validation for update and object creation 
@@ -31,10 +32,10 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   validates_presence_of :group_loan_membership_id , :group_loan_weekly_task_id 
   
   def can_only_select_one_weekly_payment_mode
+     
     if all_fields_present?  
-      
-      # case 1: current week has not been paid. 
-      if not group_loan_membership.has_cleared_current_week?(group_loan_weekly_task)
+       # case 1: current week has not been paid. 
+      if not group_loan_membership.has_cleared_weekly_payment?(group_loan_weekly_task)
         results = [ 
           is_paying_current_week, 
           is_only_savings, 
@@ -43,13 +44,12 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
 
         truth_counter = 0 
 
-        resuts.each do |truth_value|
-          if truth_value == true 
-            truth_counter += 1 
-          end
+        results.each do |truth_value|
+          truth_counter += 1 if truth_value == true 
         end
+        
 
-        if truth_counter != 1 
+        if truth_counter > 1 
           msg = 'Hanya boleh memilih salah satu: pembayaran minggu ini, " +
                 " hanya tabungan, tidak ada pembayaran, atau hanya pembayaran extra'
                 
@@ -66,7 +66,8 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
       # case 2: current week has been paid (past). options: 
       # => 1. only_voluntary_savings    if there is no backlog or future payments
       # => 2. only_voluntary_savings should be false if there is backlog or future payment
-      if  group_loan_membership.has_cleared_current_week?(group_loan_weekly_task)
+      if  group_loan_membership.has_cleared_weekly_payment?(group_loan_weekly_task)
+        puts "Has  cleared weekly payment"
         self.errors.add(:is_paying_current_week, "Sudah dibayar") if is_paying_current_week 
         self.errors.add(:is_only_savings, "Sudah dibayar") if is_only_savings 
         self.errors.add(:is_no_payment, "Sudah dibayar") if is_no_payment 
@@ -199,16 +200,19 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     end
   end
   
-  def all_fields_present?
+  def all_fields_present? 
+    
+    
     group_loan_membership_id.present?              and   
     group_loan_weekly_task_id.present?             and       
     number_of_backlogs.present?                    and
-    is_paying_current_week.present?                and
-    is_only_savings.present?                       and
-    is_no_payment.present?                         and
+    not  is_paying_current_week.nil?                and
+    not is_only_savings.nil?                      and
+    not is_no_payment.nil?                      and
+    not is_only_voluntary_savings.nil?           and 
     number_of_future_weeks.present?                and
     voluntary_savings_withdrawal_amount.present?   and
-    cash_amount.present? 
+    cash_amount.present?  
   end
   
   
@@ -292,7 +296,10 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   
   
   def self.create_object(params)
+    
     new_object                                     = self.new 
+    
+    
     new_object.group_loan_weekly_task_id           = params[:group_loan_weekly_task_id]
     new_object.group_loan_membership_id            = params[:group_loan_membership_id]
     new_object.group_loan_id                       = params[:group_loan_id]
@@ -300,9 +307,11 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     new_object.is_paying_current_week              = params[:is_paying_current_week]
     new_object.is_only_savings                     = params[:is_only_savings]
     new_object.is_no_payment                       = params[:is_no_payment]
+    new_object.is_only_voluntary_savings           = params[:is_only_voluntary_savings]
     new_object.number_of_future_weeks              = params[:number_of_future_weeks]
     new_object.voluntary_savings_withdrawal_amount = BigDecimal(params[:voluntary_savings_withdrawal_amount])
     new_object.cash_amount                         = BigDecimal(params[:cash_amount])
+    
 
     new_object.save 
     

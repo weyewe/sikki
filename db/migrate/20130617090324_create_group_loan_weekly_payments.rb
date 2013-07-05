@@ -14,7 +14,7 @@ class CreateGroupLoanWeeklyPayments < ActiveRecord::Migration
       
       # if the current week is cleared in the past 
       # in the current week payment, he has excess money.. So, pay as extra voluntary savings 
-      t.boolean :is_only_voluntary_savings                        , :default => false 
+      t.boolean :is_only_voluntary_savings              , :default => false 
       
         
       t.decimal :voluntary_savings_withdrawal_amount , :default        => 0,  :precision => 9, :scale => 2

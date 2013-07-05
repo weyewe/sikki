@@ -41,7 +41,7 @@ GEM
       actionpack (>= 3.0.0)
       activemodel (>= 3.0.0)
       activesupport (>= 3.0.0)
-    addressable (2.3.4)
+    addressable (2.3.5)
     airbrake (3.1.12)
       activesupport
       builder
@@ -58,7 +58,7 @@ GEM
     coffee-script (2.2.0)
       coffee-script-source
       execjs
-    coffee-script-source (1.6.2)
+    coffee-script-source (1.6.3)
     css_parser (1.3.4)
       addressable
     daemons (1.1.9)
@@ -77,7 +77,7 @@ GEM
     eventmachine (1.0.3)
     exceptional (2.0.33)
       rack
-    excon (0.22.1)
+    excon (0.25.1)
     execjs (1.4.0)
       multi_json (~> 1.0)
     factory_girl (4.2.0)
@@ -91,13 +91,13 @@ GEM
       netrc (~> 0.7.7)
       rest-client (~> 1.6.1)
       rubyzip
-    heroku-api (0.3.11)
-      excon (~> 0.22.1)
+    heroku-api (0.3.13)
+      excon (~> 0.25.0)
     hike (1.2.3)
     hirefireapp (0.2.0)
     i18n (0.6.1)
     journey (1.0.4)
-    jquery-rails (3.0.1)
+    jquery-rails (3.0.2)
       railties (>= 3.0, < 5.0)
       thor (>= 0.14, < 2.0)
     json (1.8.0)
@@ -111,7 +111,7 @@ GEM
       treetop (~> 1.4.8)
     mime-types (1.23)
     mini_portile (0.5.0)
-    multi_json (1.7.6)
+    multi_json (1.7.7)
     netrc (0.7.7)
     nokogiri (1.6.0)
       mini_portile (~> 0.5.0)
@@ -142,15 +142,15 @@ GEM
       rake (>= 0.8.7)
       rdoc (~> 3.4)
       thor (>= 0.14.6, < 2.0)
-    rake (10.0.4)
+    rake (10.1.0)
     rdoc (3.12.2)
       json (~> 1.4)
     rest-client (1.6.7)
       mime-types (>= 1.16)
-    roadie (2.3.4)
-      actionmailer (> 3.0.0, < 3.3.0)
-      css_parser
-      nokogiri (>= 1.4.4)
+    roadie (2.4.0)
+      actionmailer (> 3.0.0, < 5.0.0)
+      css_parser (~> 1.3.4)
+      nokogiri (~> 1.6.0)
       sprockets
     rspec-core (2.13.1)
     rspec-expectations (2.13.0)
@@ -187,7 +187,7 @@ GEM
       rack (>= 1.0.0)
     thor (0.18.1)
     tilt (1.4.1)
-    transloadit (1.1.0)
+    transloadit (1.1.1)
       multi_json
       rest-client
     transloadit-rails (1.1.0)
