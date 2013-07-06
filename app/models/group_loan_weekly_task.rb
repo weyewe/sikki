@@ -20,11 +20,12 @@ class GroupLoanWeeklyTask < ActiveRecord::Base
   end
   
   def validate_confirmation_data
-    if not ( self.employee_id.present? and  Employee.find_by_id(self.employee_id).count != 0 ) 
+    employee_id = self.employee_id 
+    if not ( self.employee_id.present? and not Employee.find_by_id( employee_id ).nil? ) 
       self.errors.add(:employee_id, "Responsible employee must be selected")
     end
     
-    if  self.collection_datetime.present? 
+    if not  self.collection_datetime.present? 
       self.errors.add(:collection_datetime, "Harus ada waktu penarikan cicilan")
     end
     
@@ -32,8 +33,8 @@ class GroupLoanWeeklyTask < ActiveRecord::Base
   end
   
   def confirm(params)
+    
     if self.unconfirmed_independent_payments.count != 0 
-      msg = "Ada pembayaran independent yang belum di konfirmasi"
       self.errors.add(:generic_errors, msg)
     end
     
@@ -43,10 +44,11 @@ class GroupLoanWeeklyTask < ActiveRecord::Base
     self.collection_datetime = params[:collection_datetime]
     self.employee_id = params[:employee_id]
     
-    self.validate_confirmation_data
+    self.validate_confirmation_data 
     return self if self.errors.size != 0 
-    
+     
     self.save
+    
     self.group_loan_weekly_payments.each do |weekly_payment|
       weekly_payment.confirm 
     end

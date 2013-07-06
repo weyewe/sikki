@@ -10,7 +10,7 @@ class GroupLoanVoluntarySavingsAddition < ActiveRecord::Base
   
   belongs_to :group_loan_membership 
   
-  has_one :savings_entry 
+  has_one :savings_entry , :as => :savings_source  
   
   def all_fields_present?
     amount.present?                                  and   

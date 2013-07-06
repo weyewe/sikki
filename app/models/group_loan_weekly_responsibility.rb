@@ -36,7 +36,38 @@ class GroupLoanWeeklyResponsibility < ActiveRecord::Base
     self.save 
   end
    
+   # t.integer :attendance_status , :default => GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:unmarked]  #options: PRESENT, Absent, Late
+   # t.text :attendance_note
    
+   
+   def self.attendance_statuses
+     [
+       GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:present],
+       GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:absent],
+       GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:late],
+     ]
+   end
+   
+   def mark_member_attendance(params)
+     if self.group_loan_weekly_task.is_confirmed? 
+       self.errors.add(:generic_errors, "Meeting mingguan sudah difinalisasi")
+       return self 
+     end
+     
+     if not params[:attendance_status].present?
+       self.errors.add(:attendance_status, "Status kehadiran harus diisi: hadir, absen, atau telat")
+       return self
+     end
+     
+     if params[:attendance_status].present? and not self.class.attendance_statuses.include?(params[:attendance_status])
+       self.errors.add(:attendance_status, "Status kehadiran harus diisi: hadir, absen, atau telat")
+       return self
+     end
+     
+     self.attendance_status = params[:attendance_status]
+     self.attendance_note  = params[:attendance_note]
+     self.save 
+   end
    
   
   

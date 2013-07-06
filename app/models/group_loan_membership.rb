@@ -117,6 +117,10 @@ class GroupLoanMembership < ActiveRecord::Base
     self.remaining_weeks.where(:group_loan_weekly_task_id => group_loan_weekly_task.id ).count == 0 
   end
   
+  def weekly_responsibility(group_loan_weekly_task)
+    self.group_loan_weekly_responsibilities.where(:group_loan_weekly_task_id => group_loan_weekly_task.id ).first 
+  end
+  
 =begin
   Entering the grace period
 =end

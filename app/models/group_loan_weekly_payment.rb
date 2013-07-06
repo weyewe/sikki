@@ -242,7 +242,9 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     end
        
     current_weekly_responsibility.create_weekly_responsibility_clearance( self , payment_status)
-    current_weekly_responsibility.assign_group_loan_weekly_payment( self )
+    # current_weekly_responsibility.assign_group_loan_weekly_payment( self )
+    current_weekly_responsibility.group_loan_weekly_payment_id = group_loan_weekly_payment.id 
+    current_weekly_responsibility.save
   end
   
   # can only be performed if the current week has been paid in the past ( future payment ) 
@@ -255,7 +257,9 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
                                         :has_clearance => true # cleared in the past  
                                       ).first
                                       
-    current_weekly_responsibility.assign_group_loan_weekly_payment( self ) 
+    # current_weekly_responsibility.assign_group_loan_weekly_payment( self ) 
+    current_weekly_responsibility.group_loan_weekly_payment_id = group_loan_weekly_payment.id 
+    current_weekly_responsibility.save
   end
   
   def create_future_week_payments
@@ -388,12 +392,21 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   
   # execute the transaction and past effect 
   def confirm
+    puts "confirming the weekly_payment"
     return if self.is_confirmed? 
-    
+    puts "NOT returning"
     
     self.is_confirmed = true 
     self.confirmation_datetime = DateTime.now 
     self.save
+    
+    if self.errors.size == 0 
+      puts 'no error in confirming weekly payment'
+    else
+      self.errors.messages.each do |msg|
+        puts msg
+      end
+    end
     
     self.update_affected_weekly_responsibilities 
     self.create_transaction_activities
