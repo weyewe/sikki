@@ -1,7 +1,4 @@
-mark financial  disbursement , finalize financial disbursement @group_loan => DONE 
-
-mark loan disbursement  => not done   DONE.. byproduct is analyzed. 
-
+LAST: perform_future_payment_spec.rb 
 
 TODO:
 
