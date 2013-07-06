@@ -20,6 +20,8 @@ TODO:
 	-> if the number of future weeks is more than the number of uncleared week (can be no payment or only savinsg), error
 	-> if the number of backlogs is more than unpaid backlog, will generate error
 	-> no_payment/only_savings clearance will produce backlog 
+	
+	# BACKLOG GENERATION scheme 
 	 
 	
 2. GroupLoanIndependentPayment

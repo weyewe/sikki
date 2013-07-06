@@ -4,7 +4,7 @@
 class GroupLoanWeeklyResponsibility < ActiveRecord::Base
   attr_accessible :group_loan_membership_id, :group_loan_weekly_task_id
   belongs_to :group_loan_weekly_task
-  has_one :group_loan_weekly_payment_id 
+  belongs_to :group_loan_weekly_payment  
   
 =begin
   # to clear the weekly responsibility: weekly payment

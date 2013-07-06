@@ -394,7 +394,211 @@ describe GroupLoanWeeklyPayment do
     end
   end
   
-  context "on weekly task confirmation, it will generate 1 transaction activity, 2 savings_entry for payment: with saving withdrawal, compulsory savings"
+  context "on weekly task confirmation, it will generate 1 transaction activity, 2 savings_entry for payment: with saving withdrawal, compulsory savings" do
+    before(:each) do
+      @glm_1 = @group_loan.active_group_loan_memberships[0]
+      @initial_compulsory_savings_1 = @glm_1.total_compulsory_savings 
+      @payment_1 = nil
+      
+      @voluntary_savings = BigDecimal('1000') 
+      @used_voluntary_savings = BigDecimal('500')
+      
+      @group_loan.active_group_loan_memberships.each do |glm|
+        @voluntary_savings_addition = GroupLoanVoluntarySavingsAddition.create  :group_loan_membership_id => glm.id , 
+                                                  :amount => @voluntary_savings ,
+                                                  :employee_id => @employee.id ,
+                                                  :group_loan_id => @group_loan.id
+                                                
+      
+        @voluntary_savings_addition.confirm 
+      end
+      
+      @glm_1.reload 
+      @group_loan.reload 
+      
+      @initial_voluntary_savings_1 = @glm_1.total_voluntary_savings 
+      
+      @group_loan.active_group_loan_memberships.each do |glm|
+        
+        payment = GroupLoanWeeklyPayment.create_object({
+          :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+          :group_loan_membership_id            => glm.id                                           ,
+          :group_loan_id                       => @group_loan.id                                      ,
+          :number_of_backlogs                  => 0                                                   ,
+          :is_paying_current_week              => true                                                ,
+          :is_only_savings                     => false                                               ,
+          :is_no_payment                       => false                                               ,
+          :is_only_voluntary_savings           => false ,
+          :number_of_future_weeks              => 0                                                   ,
+          :voluntary_savings_withdrawal_amount =>    @used_voluntary_savings                                               ,
+          :cash_amount                         => glm.group_loan_product.weekly_payment_amount - @used_voluntary_savings
+        })
+        
+        @payment_1 = payment if glm.id == @glm_1.id 
+        
+        
+        # mark attendance 
+        @weekly_responsibility = glm.weekly_responsibility( @active_weekly_task ) 
+        
+        @weekly_responsibility.mark_member_attendance({
+          :attendance_status => GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:present] ,
+          :attendance_note => "haha"
+        })
+      end
+      
+      
+      
+      @active_weekly_task.confirm({
+        :collection_datetime => DateTime.now, 
+        :employee_id => @employee.id
+      })
+      
+      @payment_1.reload 
+      @glm_1.reload
+    end
+    
+    it 'should have confirmed the active weekly task ' do
+      @active_weekly_task.is_confirmed.should be_true 
+    end
+    
+    it 'should create confirmed payment' do
+      @payment_1.is_confirmed.should be_true 
+    end
+    
+    it 'should create 1 transaction activity for each payment' do
+      transaction_activity = @payment_1.transaction_activity
+      transaction_activity.should_not be_nil
+      transaction_activity.should be_valid
+      
+      
+      transaction_activity.transaction_source_id .should == @payment_1.id  
+      transaction_activity.transaction_source_type.should == @payment_1.class.to_s
+      transaction_activity.cash.should == @glm_1.group_loan_product.weekly_payment_amount - @used_voluntary_savings
+      transaction_activity.cash_direction.should == FUND_DIRECTION[:incoming]
+      transaction_activity.savings_direction.should == FUND_DIRECTION[:outgoing]
+      transaction_activity.savings.should == @used_voluntary_savings
+      transaction_activity.member_id.should == @glm_1.member_id  
+    end
+    
+    it 'should increase the compulsory savings' do
+      @final_compulsory_savings_1 = @glm_1.total_compulsory_savings 
+      diff = @final_compulsory_savings_1 - @initial_compulsory_savings_1
+      diff.should == @glm_1.group_loan_product.min_savings
+    end
+    
+    it 'should create 2 savings entry' do
+      @payment_1.savings_entries.count.should == 2 
+    end
+    
+    it 'should deduct the voluntary savings' do
+      
+      @final_voluntary_savings_1 = @glm_1.total_voluntary_savings 
+      diff = @initial_voluntary_savings_1 - @final_voluntary_savings_1 
+      diff.should == @used_voluntary_savings
+    end
+  end
   
-  context "on weekly_task_confirmation, it will generate 1 transaction activity, 3 savings entry: savings withdarawal, extra savings, and compulsory savings"
+  context "on weekly_task_confirmation, it will generate 1 transaction activity, 3 savings entry: savings withdarawal, extra savings, and compulsory savings" do
+    before(:each) do
+      @glm_1 = @group_loan.active_group_loan_memberships[0]
+      @initial_compulsory_savings_1 = @glm_1.total_compulsory_savings 
+      @payment_1 = nil
+      
+      @voluntary_savings = BigDecimal('1000') 
+      @used_voluntary_savings = BigDecimal('500')
+      @extra_voluntary_savings = BigDecimal('100')
+      
+      @group_loan.active_group_loan_memberships.each do |glm|
+        @voluntary_savings_addition = GroupLoanVoluntarySavingsAddition.create  :group_loan_membership_id => glm.id , 
+                                                  :amount => @voluntary_savings ,
+                                                  :employee_id => @employee.id ,
+                                                  :group_loan_id => @group_loan.id
+                                                
+      
+        @voluntary_savings_addition.confirm 
+      end
+      
+      @glm_1.reload 
+      @group_loan.reload 
+      
+      @initial_voluntary_savings_1 = @glm_1.total_voluntary_savings 
+      
+      @group_loan.active_group_loan_memberships.each do |glm|
+        
+        payment = GroupLoanWeeklyPayment.create_object({
+          :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+          :group_loan_membership_id            => glm.id                                           ,
+          :group_loan_id                       => @group_loan.id                                      ,
+          :number_of_backlogs                  => 0                                                   ,
+          :is_paying_current_week              => true                                                ,
+          :is_only_savings                     => false                                               ,
+          :is_no_payment                       => false                                               ,
+          :is_only_voluntary_savings           => false ,
+          :number_of_future_weeks              => 0                                                   ,
+          :voluntary_savings_withdrawal_amount =>    @used_voluntary_savings                                               ,
+          :cash_amount                         => glm.group_loan_product.weekly_payment_amount - @used_voluntary_savings + @extra_voluntary_savings
+        })
+        
+        @payment_1 = payment if glm.id == @glm_1.id 
+        
+        
+        # mark attendance 
+        @weekly_responsibility = glm.weekly_responsibility( @active_weekly_task ) 
+        
+        @weekly_responsibility.mark_member_attendance({
+          :attendance_status => GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:present] ,
+          :attendance_note => "haha"
+        })
+      end
+      
+      
+      
+      @active_weekly_task.confirm({
+        :collection_datetime => DateTime.now, 
+        :employee_id => @employee.id
+      })
+      
+      @payment_1.reload 
+      @glm_1.reload
+    end
+    
+    it 'should have confirmed the active weekly task ' do
+      @active_weekly_task.is_confirmed.should be_true 
+    end
+    
+    it 'should create confirmed payment' do
+      @payment_1.is_confirmed.should be_true 
+    end
+    
+    it 'should create 1 transaction activity for each payment' do
+      transaction_activity = @payment_1.transaction_activity
+      transaction_activity.should_not be_nil
+      transaction_activity.should be_valid
+      
+      
+      transaction_activity.transaction_source_id .should == @payment_1.id  
+      transaction_activity.transaction_source_type.should == @payment_1.class.to_s
+      transaction_activity.cash.should == @glm_1.group_loan_product.weekly_payment_amount - @used_voluntary_savings + @extra_voluntary_savings
+      transaction_activity.cash_direction.should == FUND_DIRECTION[:incoming]
+      transaction_activity.savings_direction.should == FUND_DIRECTION[:outgoing]
+      transaction_activity.savings.should == @used_voluntary_savings
+      transaction_activity.member_id.should == @glm_1.member_id  
+    end
+    
+    it 'should increase the compulsory savings' do
+      @final_compulsory_savings_1 = @glm_1.total_compulsory_savings 
+      diff = @final_compulsory_savings_1 - @initial_compulsory_savings_1
+      diff.should == @glm_1.group_loan_product.min_savings
+    end
+    
+    it 'should create 3 savings entry' do
+      @payment_1.savings_entries.count.should == 3
+    end
+    
+    it 'should deduct the voluntary savings' do
+      @final_voluntary_savings_1 = @glm_1.total_voluntary_savings 
+      diff = @initial_voluntary_savings_1 - @final_voluntary_savings_1 
+      diff.should == @used_voluntary_savings - @extra_voluntary_savings
+    end
+  end
 end

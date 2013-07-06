@@ -9,6 +9,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   belongs_to :group_loan 
   belongs_to :group_loan_weekly_task
   
+  has_one :group_loan_weekly_responsibility 
   
   # we have to separate validation for update and object creation 
   # these shite are working for CREATE
@@ -242,9 +243,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     end
        
     current_weekly_responsibility.create_weekly_responsibility_clearance( self , payment_status)
-    # current_weekly_responsibility.assign_group_loan_weekly_payment( self )
-    current_weekly_responsibility.group_loan_weekly_payment_id = group_loan_weekly_payment.id 
-    current_weekly_responsibility.save
+    current_weekly_responsibility.assign_group_loan_weekly_payment( self ) 
   end
   
   # can only be performed if the current week has been paid in the past ( future payment ) 
@@ -257,9 +256,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
                                         :has_clearance => true # cleared in the past  
                                       ).first
                                       
-    # current_weekly_responsibility.assign_group_loan_weekly_payment( self ) 
-    current_weekly_responsibility.group_loan_weekly_payment_id = group_loan_weekly_payment.id 
-    current_weekly_responsibility.save
+    current_weekly_responsibility.assign_group_loan_weekly_payment( self )  
   end
   
   def create_future_week_payments
@@ -278,6 +275,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   def update_affected_weekly_responsibilities
     self.create_group_backlog_payments  if self.number_of_backlogs != 0 
     self.create_current_week_payment  if self.is_paying_current_week? or self.is_only_savings? or self.is_no_payment?
+    # not only savings.. current week has been paid.. and wants to pay for extra savings 
     self.create_only_voluntary_savings_weekly_payment if self.is_only_voluntary_savings?  
     self.create_future_week_payments  if self.number_of_future_weeks != 0 
   end
@@ -299,6 +297,15 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
 =end
   
   
+  def update_weekly_responsibility_payment_status
+    weekly_responsibility  = group_loan_weekly_task.
+                              group_loan_weekly_responsibilities.
+                              where(:group_loan_membership_id => self.group_loan_membership_id).first
+    
+    weekly_responsibility.group_loan_weekly_payment_id = self.id 
+    weekly_responsibility.save 
+  end
+  
   def self.create_object(params)
     
     new_object                                     = self.new 
@@ -317,7 +324,22 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     new_object.cash_amount                         = BigDecimal(params[:cash_amount])
     
 
-    new_object.save 
+    if new_object.save 
+      # new_object.update_weekly_responsibility_payment_status 
+    end
+    
+    # weekly_responsibility.assign_payment_status  # << will change, flexible on upload
+    # payment_status and the group_loan_weekly_payment_id
+    
+    
+    # self.create_current_week_payment  if self.is_paying_current_week? or self.is_only_savings? or self.is_no_payment?
+    # self.create_only_voluntary_savings_weekly_payment if self.is_only_voluntary_savings?
+    
+    # if it has_clearance, don't need to look for group_loan_weekly_payment_id 
+    # so, i am looking for weekly responsibilities that doesn't have clearance
+    # and doesn't have group_loan_weeky_payment_id 
+    
+    # if those 4 cases: assign group_loan_weekly_payment to the weekly_responsibility 
     
     return new_object 
   end
@@ -392,21 +414,13 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   
   # execute the transaction and past effect 
   def confirm
-    puts "confirming the weekly_payment"
     return if self.is_confirmed? 
-    puts "NOT returning"
-    
+     
     self.is_confirmed = true 
     self.confirmation_datetime = DateTime.now 
     self.save
     
-    if self.errors.size == 0 
-      puts 'no error in confirming weekly payment'
-    else
-      self.errors.messages.each do |msg|
-        puts msg
-      end
-    end
+   
     
     self.update_affected_weekly_responsibilities 
     self.create_transaction_activities

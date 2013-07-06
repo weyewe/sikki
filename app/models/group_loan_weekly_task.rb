@@ -35,7 +35,30 @@ class GroupLoanWeeklyTask < ActiveRecord::Base
   def confirm(params)
     
     if self.unconfirmed_independent_payments.count != 0 
-      self.errors.add(:generic_errors, msg)
+      self.errors.add(:generic_errors, 'Ada pembayaran independent yang belum di konfirmasi')
+      return self 
+    end
+    
+    if self.group_loan_weekly_responsibilities.where{
+      attendance_status.eq  GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:unmarked]
+    }.count != 0 
+      self.errors.add(:generic_errors, "Ada kehadiran anggota yang belum ditandai")
+      return self 
+    end
+    
+    
+    
+    # if everyone has made payment for that week 
+    glm_id_list_to_pay = self.group_loan_weekly_responsibilities.
+                    where(:has_clearance => false).map{|x| x.group_loan_membership_id}
+              
+    expected_payment_count =  glm_id_list_to_pay.length      
+    actual_weekly_payment_count = self.group_loan_weekly_payments.
+                                where(:group_loan_membership_id =>glm_id_list_to_pay ).count            
+    
+    if expected_payment_count != actual_weekly_payment_count
+      self.errors.add(:generic_errors, "Ada pembayaran mingguan yang belum dibayar")
+      return self 
     end
     
     self.is_confirmed = true 

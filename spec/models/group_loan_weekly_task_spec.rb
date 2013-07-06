@@ -124,8 +124,153 @@ describe GroupLoanWeeklyTask do
     @group_loan.reload 
   end
    
-  it 'should have group_loan_weekly_task , equal to the number of loan duration' do
-    @group_loan.group_loan_weekly_tasks.count.should == @group_loan.loan_duration
+  it 'should be in the weekly payment period' do
+    @group_loan.is_weekly_payment_period_phase?  .should be_true 
   end
+  
+  context "closing weekly task: all weekly responsibilities attendance are marked and are cleared" do
+    before(:each) do
+      @glm_1 = @group_loan.active_group_loan_memberships[0]
+      @active_weekly_task = @group_loan.active_weekly_task
+      
+      
+      @group_loan.active_group_loan_memberships.each do |glm|
+        # next if glm.id == @glm_1.id 
+          
+        GroupLoanWeeklyPayment.create_object({
+          :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+          :group_loan_membership_id            => glm.id                                           ,
+          :group_loan_id                       => @group_loan.id                                      ,
+          :number_of_backlogs                  => 0                                                   ,
+          :is_paying_current_week              => true                                                ,
+          :is_only_savings                     => false                                               ,
+          :is_no_payment                       => false                                               ,
+          :is_only_voluntary_savings           => false ,
+          :number_of_future_weeks              => 0                                                   ,
+          :voluntary_savings_withdrawal_amount =>    0                                                ,
+          :cash_amount                         => glm.group_loan_product.weekly_payment_amount
+        })
+
+        @weekly_responsibility = glm.weekly_responsibility( @active_weekly_task ) 
+
+        @weekly_responsibility.mark_member_attendance({
+          :attendance_status => GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:present] ,
+          :attendance_note => "haha"
+        })
+      end
+      
+      @active_weekly_task.confirm({
+        :collection_datetime => DateTime.now, 
+        :employee_id => @employee.id
+      })
+    end
+    
+    
+    it 'should have confirmed the weekly task' do
+      if @active_weekly_task.errors.size != 0 
+        @active_weekly_task.errors.messages.each do |msg|
+          puts "The error: #{msg}"
+        end
+      end
+      @active_weekly_task.is_confirmed.should be_true 
+    end
+    
+  end
+  
+  context "closing weekly task: some weekly responsibilities' attendance are not marked" do
+    before(:each) do
+      @glm_1 = @group_loan.active_group_loan_memberships[0]
+      @active_weekly_task = @group_loan.active_weekly_task
+      
+      
+      @group_loan.active_group_loan_memberships.each do |glm|
+        # next if glm.id == @glm_1.id 
+          
+        GroupLoanWeeklyPayment.create_object({
+          :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+          :group_loan_membership_id            => glm.id                                           ,
+          :group_loan_id                       => @group_loan.id                                      ,
+          :number_of_backlogs                  => 0                                                   ,
+          :is_paying_current_week              => true                                                ,
+          :is_only_savings                     => false                                               ,
+          :is_no_payment                       => false                                               ,
+          :is_only_voluntary_savings           => false ,
+          :number_of_future_weeks              => 0                                                   ,
+          :voluntary_savings_withdrawal_amount =>    0                                                ,
+          :cash_amount                         => glm.group_loan_product.weekly_payment_amount
+        })
+
+        if glm.id != @glm_1.id 
+          @weekly_responsibility = glm.weekly_responsibility( @active_weekly_task ) 
+
+          @weekly_responsibility.mark_member_attendance({
+            :attendance_status => GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:present] ,
+            :attendance_note => "haha"
+          })
+        end
+        
+      end
+      
+      @active_weekly_task.confirm({
+        :collection_datetime => DateTime.now, 
+        :employee_id => @employee.id
+      })
+      @active_weekly_task.reload 
+    end
+    
+    
+    it 'should NOT have confirmed the weekly task' do
+      @active_weekly_task.is_confirmed.should be_false  
+    end
+  end
+  
+  context "closing weekly task: some weekly responsibilities'  are not cleared" do
+    before(:each) do
+      @glm_1 = @group_loan.active_group_loan_memberships[0]
+      @active_weekly_task = @group_loan.active_weekly_task
+      
+      
+      @group_loan.active_group_loan_memberships.each do |glm|
+        # next if glm.id == @glm_1.id 
+        if glm.id != @glm_1.id 
+          GroupLoanWeeklyPayment.create_object({
+            :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+            :group_loan_membership_id            => glm.id                                           ,
+            :group_loan_id                       => @group_loan.id                                      ,
+            :number_of_backlogs                  => 0                                                   ,
+            :is_paying_current_week              => true                                                ,
+            :is_only_savings                     => false                                               ,
+            :is_no_payment                       => false                                               ,
+            :is_only_voluntary_savings           => false ,
+            :number_of_future_weeks              => 0                                                   ,
+            :voluntary_savings_withdrawal_amount =>    0                                                ,
+            :cash_amount                         => glm.group_loan_product.weekly_payment_amount
+          })
+        
+        end
+
+      
+        @weekly_responsibility = glm.weekly_responsibility( @active_weekly_task ) 
+
+        @weekly_responsibility.mark_member_attendance({
+          :attendance_status => GROUP_LOAN_WEEKLY_ATTENDANCE_STATUS[:present] ,
+          :attendance_note => "haha"
+        })
+        
+      end
+      
+      @active_weekly_task.confirm({
+        :collection_datetime => DateTime.now, 
+        :employee_id => @employee.id
+      })
+      @active_weekly_task.reload 
+    end
+    
+    it 'should NOT have confirmed the weekly task' do
+      @active_weekly_task.is_confirmed.should be_false  
+    end
+  end
+  
+  
   
 end
