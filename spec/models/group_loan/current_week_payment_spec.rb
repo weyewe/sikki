@@ -162,5 +162,29 @@ describe GroupLoanWeeklyPayment do
     @glw_payment.errors.size.should_not == 0 
   end
   
+ 
+    
+   it 'should not allowed to perform current week payment where the week n-1 is not confirmed, where n > 1 ' do
+     @weekly_task_2 = GroupLoanWeeklyTask.where(:group_loan_id => @group_loan.id, :week_number => 2).first
+     
+     @weekly_task_2.should be_valid 
+     
+     @glw_payment =  GroupLoanWeeklyPayment.create_object({
+       :group_loan_weekly_task_id           => @weekly_task_2.id                              ,
+       :group_loan_membership_id            => @glm_1.id                                           ,
+       :group_loan_id                       => @group_loan.id                                      ,
+       :number_of_backlogs                  => 0                                                   ,
+       :is_paying_current_week              => true                                                ,
+       :is_only_savings                     => false                                               ,
+       :is_no_payment                       => false                                               ,
+       :is_only_voluntary_savings           => false ,
+       :number_of_future_weeks              => 0                                                   ,
+       :voluntary_savings_withdrawal_amount => 0                                                   ,
+       :cash_amount                         => @glm_1.group_loan_product.weekly_payment_amount
+     })
+     
+     @glw_payment.should_not be_valid
+   end
    
+    
 end

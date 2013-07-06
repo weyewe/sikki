@@ -25,18 +25,21 @@ TODO:
 		c. Update/Delete post confirmation => LATER! not now 
 		
 
-	-> For the current_week payment, the prev weekly task must be finalized 
+
+		CURRENT_WEEK payment spec  (current_week_payment_spec.rb)
+	-> For the current_week payment, the prev weekly task must be finalized DONE 
 		# Say that we are still @week 1.. but we want to make current_week payment, with the group_loan_weekly_task from week 2
 		# CAN't
+	
+	-> If the current_week has been paid, can't double pay  DONE 
+	
+	
 	-> For the future week payment, the prev_weekly task can be open 
 		# if we are @week_1.. and we want to pay for 3 weeks in advanced: 1 current week + 2 future weeks.. no problem .
-		
-	-> If the current_week has been paid, can't double pay 
-	
-	
 	-> if the number of future weeks is more than the number of uncleared week (can be no payment or only savinsg), error
 	-> if the number of backlogs is more than unpaid backlog, will generate error
-	-> no_payment/only_savings clearance will produce backlog 
+	
+	-> no_payment/only_savings clearance will produce backlog  DONE 
 	
 	
 	

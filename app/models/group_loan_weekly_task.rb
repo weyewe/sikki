@@ -79,4 +79,15 @@ class GroupLoanWeeklyTask < ActiveRecord::Base
   end
   
   
+=begin
+  Utility methods
+=end
+
+  def previous_weekly_task
+    return self if self.week_number == 1 
+    
+    self.class.where(:week_number => self.week_number - 1 , :group_loan_id => self.group_loan_id ).first 
+  end
+  
+  
 end

@@ -23,6 +23,8 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   validate :only_savings_validity
   validate :total_payment_must_be_zero_if_no_payment_declaration
   validate :total_payment_must_not_be_zero_if_non_no_payment_declaration
+  
+  validate :previous_weekly_task_must_be_closed_to_perform_current_week_payment
 
   
   # How about validation mechanism for UPDATE? => banzai! 
@@ -206,9 +208,18 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     end
   end
   
+  def previous_weekly_task_must_be_closed_to_perform_current_week_payment
+    return if group_loan_weekly_task.week_number == 1 
+    return if not all_fields_present? 
+    
+    if is_paying_current_week? or is_only_savings? or is_no_payment?
+      if not group_loan_weekly_task.previous_weekly_task.is_confirmed?
+        self.errors.add(:generic_errors, "Minggu sebelumnya belum di konfirmasi")
+      end
+    end
+  end
+  
   def all_fields_present? 
-    
-    
     group_loan_membership_id.present?              and   
     group_loan_weekly_task_id.present?             and       
     number_of_backlogs.present?                    and
