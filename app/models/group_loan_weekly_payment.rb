@@ -195,7 +195,12 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   def no_double_group_loan_weekly_payment
     return if not all_fields_present?
     
-    if  is_paying_current_week?  and group_loan_membership.has_cleared_weekly_payment?(group_loan_weekly_task)  
+    if  (self.persisted? and 
+            self.class.where(:group_loan_weekly_task_id => self.group_loan_weekly_task_id,
+                              :group_loan_membership_id => self.group_loan_membership_id ).count != 1) or 
+        ( not self.persisted? and
+            self.class.where(:group_loan_weekly_task_id => self.group_loan_weekly_task_id,
+                              :group_loan_membership_id => self.group_loan_membership_id ).count != 0  )
       msg = "Sudah ada pembayaran untuk minggu ini"
       self.errors.add(:is_paying_current_week, msg ) 
     end

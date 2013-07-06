@@ -7,21 +7,40 @@ TODO:
 
 1. GroupLoanWeeklyPayment 
 
-			## create saving_entry_addition => To test payment with voluntary_savings 
+			
+			
 	* 3  categories: 
 		a. Testing the payment and the byproduct    (will be executed during weekly_task confirmation)
 		b. Business logic to ensure the precondition 
+		
+			## create saving_entry_addition => To test payment with voluntary_savings   DONE 
+			# BACKLOG GENERATION scheme  => DONE, only on no_payment_declaration and only_savings 
+			# Confirm the weekly task, only if all weekly_resposibilities are cleared 
+				=> will create transaction activity and savings_entry
+		
+			# Payment to clear the backlog + future weeks 
+			# 
+		
+		
 		c. Update/Delete post confirmation => LATER! not now 
 		
 
 	-> For the current_week payment, the prev weekly task must be finalized 
+		# Say that we are still @week 1.. but we want to make current_week payment, with the group_loan_weekly_task from week 2
+		# CAN't
 	-> For the future week payment, the prev_weekly task can be open 
+		# if we are @week_1.. and we want to pay for 3 weeks in advanced: 1 current week + 2 future weeks.. no problem .
+		
 	-> If the current_week has been paid, can't double pay 
+	
+	
 	-> if the number of future weeks is more than the number of uncleared week (can be no payment or only savinsg), error
 	-> if the number of backlogs is more than unpaid backlog, will generate error
 	-> no_payment/only_savings clearance will produce backlog 
 	
-	# BACKLOG GENERATION scheme 
+	
+	
+	#backlog payment scheme ?
 	 
 	
 2. GroupLoanIndependentPayment
