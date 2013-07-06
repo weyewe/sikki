@@ -324,22 +324,8 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
     new_object.cash_amount                         = BigDecimal(params[:cash_amount])
     
 
-    if new_object.save 
-      # new_object.update_weekly_responsibility_payment_status 
-    end
-    
-    # weekly_responsibility.assign_payment_status  # << will change, flexible on upload
-    # payment_status and the group_loan_weekly_payment_id
-    
-    
-    # self.create_current_week_payment  if self.is_paying_current_week? or self.is_only_savings? or self.is_no_payment?
-    # self.create_only_voluntary_savings_weekly_payment if self.is_only_voluntary_savings?
-    
-    # if it has_clearance, don't need to look for group_loan_weekly_payment_id 
-    # so, i am looking for weekly responsibilities that doesn't have clearance
-    # and doesn't have group_loan_weeky_payment_id 
-    
-    # if those 4 cases: assign group_loan_weekly_payment to the weekly_responsibility 
+    new_object.save  
+     
     
     return new_object 
   end
@@ -357,6 +343,7 @@ class GroupLoanWeeklyPayment < ActiveRecord::Base
   
   
   def create_transaction_activities
+    return if self.is_no_payment?
     
     member = group_loan_membership.member 
     TransactionActivity.create :transaction_source_id => self.id, 
