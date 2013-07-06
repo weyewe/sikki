@@ -161,6 +161,91 @@ describe GroupLoanWeeklyPayment do
     @glm_1.has_cleared_weekly_payment?(@active_weekly_task).should be_false 
   end
   
+  
+  it 'should allow not allow cash or savings transaction if no_payment_declaration' do
+    @glw_payment =  GroupLoanWeeklyPayment.create_object({
+      :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+      :group_loan_membership_id            => @glm_1.id                                           ,
+      :group_loan_id                       => @group_loan.id                                      ,
+      :number_of_backlogs                  => 0                                                   ,
+      :is_paying_current_week              => false                                                ,
+      :is_only_savings                     => false                                               ,
+      :is_no_payment                       => true                                               ,
+      :is_only_voluntary_savings           => false ,
+      :number_of_future_weeks              => 0                                                   ,
+      :voluntary_savings_withdrawal_amount => 0                                                   ,
+      :cash_amount                         => BigDecimal('500')
+    })
+    
+    @glw_payment.should_not be_valid  
+    
+    
+    @glw_payment =  GroupLoanWeeklyPayment.create_object({
+      :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+      :group_loan_membership_id            => @glm_1.id                                           ,
+      :group_loan_id                       => @group_loan.id                                      ,
+      :number_of_backlogs                  => 0                                                   ,
+      :is_paying_current_week              => false                                                ,
+      :is_only_savings                     => false                                               ,
+      :is_no_payment                       => true                                               ,
+      :is_only_voluntary_savings           => false ,
+      :number_of_future_weeks              => 0                                                   ,
+      :voluntary_savings_withdrawal_amount => 0                                                   ,
+      :cash_amount                         =>  0
+    })
+    
+    @glw_payment.should be_valid
+  end
+  
+  it 'should not allow savings withdrawal on no_payment declaration' do
+    @savings_addition = GroupLoanVoluntarySavingsAddition.create  :group_loan_membership_id => @glm_1.id , 
+                                              :amount => @glm_1.group_loan_product.weekly_payment_amount,
+                                              :employee_id => @employee.id ,
+                                              :group_loan_id => @group_loan.id 
+    @savings_addition.confirm
+    
+    @glw_payment =  GroupLoanWeeklyPayment.create_object({
+      :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+      :group_loan_membership_id            => @glm_1.id                                           ,
+      :group_loan_id                       => @group_loan.id                                      ,
+      :number_of_backlogs                  => 0                                                   ,
+      :is_paying_current_week              => false                                                ,
+      :is_only_savings                     => false                                               ,
+      :is_no_payment                       => true                                               ,
+      :is_only_voluntary_savings           => false ,
+      :number_of_future_weeks              => 0                                                   ,
+      :voluntary_savings_withdrawal_amount => BigDecimal('500')                                                   ,
+      :cash_amount                         =>  0
+    })
+    
+    @glw_payment.should_not be_valid
+  end
+  
+  it 'should not allow savings withdrawal on only_savings declaration' do
+    @savings_addition = GroupLoanVoluntarySavingsAddition.create  :group_loan_membership_id => @glm_1.id , 
+                                              :amount => @glm_1.group_loan_product.weekly_payment_amount,
+                                              :employee_id => @employee.id ,
+                                              :group_loan_id => @group_loan.id 
+    @savings_addition.confirm
+    
+    @glw_payment =  GroupLoanWeeklyPayment.create_object({
+      :group_loan_weekly_task_id           => @active_weekly_task.id                              ,
+      :group_loan_membership_id            => @glm_1.id                                           ,
+      :group_loan_id                       => @group_loan.id                                      ,
+      :number_of_backlogs                  => 0                                                   ,
+      :is_paying_current_week              => false                                                ,
+      :is_only_savings                     => true                                               ,
+      :is_no_payment                       => false                                               ,
+      :is_only_voluntary_savings           => false ,
+      :number_of_future_weeks              => 0                                                   ,
+      :voluntary_savings_withdrawal_amount => BigDecimal('500')                                                   ,
+      :cash_amount                         =>  0
+    })
+    
+    @glw_payment.should_not be_valid
+  end
+  
+  
   it "should only select one mode of current week payment" do 
     
     
