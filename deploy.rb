@@ -36,7 +36,7 @@ set :repository,  "https://github.com/weyewe/neo-sikki.git"
 # https://github.com/weyewe/esman.git
 # set :repository, 'git://github.com/weyewe/neobooker.git'
 
-set :user , 'corgi_deployer'
+set :user , ENV["user"]
 set :unicorn_pid, "#{deploy_to}/shared/pids/unicorn.pid"
 
 set :rbenv_path, "/usr/local/rbenv"
