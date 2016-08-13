@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 gem 'rails', '3.2.13'
 
- 
+
 # Bundle edge Rails instead:
 # gem 'rails',     :git => 'git://github.com/rails/rails.git'
 
@@ -13,21 +13,21 @@ gem "daemons"
 gem 'thin'
 gem 'uuidtools'
 gem "airbrake"
-gem "kaminari"  
+gem "kaminari"
 gem 'valid_email'
-gem 'acts_as_commentable_with_threading', 
+gem 'acts_as_commentable_with_threading',
   :git => 'https://github.com/elight/acts_as_commentable_with_threading.git'
 
-gem "squeel" 
+gem "squeel"
 gem 'acts_as_decimal'
 gem 'simple_form'
 
 gem 'exceptional'  # added exceptional.. but, it is not shown to be working
 gem 'heroku'
 
-gem 'roadie' # for sending email 
+gem 'roadie' # for sending email
 
-gem "delayed_job_active_record", "~> 0.2.1" # delayed_job 
+gem "delayed_job_active_record", "~> 0.2.1" # delayed_job
 gem 'hirefireapp'
 gem "daemons"
 
@@ -52,6 +52,9 @@ gem 'jquery-rails'
 # Use unicorn as the web server
 # gem 'unicorn'
 
+gem 'mina'
+gem 'mina-unicorn',    :require => false
+gem 'unicorn'
 # Deploy with Capistrano
 # gem 'capistrano'
 
@@ -59,8 +62,8 @@ gem 'jquery-rails'
 # gem 'ruby-debug19', :require => 'ruby-debug'
 
 
-group :development, :test do 
-  
+group :development, :test do
+
   gem "rspec-rails"# , "~> 2.6"
   gem "factory_girl_rails"# , "~> 4.0"
   # gem "faker"
@@ -71,6 +74,3 @@ group :test do
   # Pretty printed test output
   gem 'turn', :require => false
 end
-
-
-
